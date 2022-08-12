@@ -7,8 +7,8 @@
 #include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include\cuda_runtime.h" // RASCUNHO
 #include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include\device_launch_parameters.h"
 #else
-#include "include\cuda_runtime.h"
-#include "include\device_launch_parameters.h"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 #endif
 #include <vector>
