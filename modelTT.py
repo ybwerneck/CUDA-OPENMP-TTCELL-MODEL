@@ -140,42 +140,12 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False):     
         
-        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+        name="./kernel.o"
         if os.name == 'nt':
-            name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+            name="./kernel.o"
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" "  
         if(use_gpu):
             args=args+"--use_gpu=1"
         print(args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
         print( output.stdout.read().decode("utf-8"))
-        # matrix={}
-  
-        # try:
-        #     string = output.stdout.read().decode("utf-8")
-        #     matrix = np.matrix(string)
-        #     print(matrix)
-        
-        # except:
-        #     print(args)
-        #     print(string)
-        #     print("\n")
-
-
-
-       
-        # try: 
-        #     ads=TTCellModel.ads(matrix[:-1,1],[0.5,0.9])
-        #     return {"Wf": matrix[:-1],"dVmax":matrix[-1,1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":matrix[-2,1]}
-        # except:
-             
-        #      print(args)
-        #      print("out",string)
-        #      print(params)
-        #      return TTCellModel.callCppmodel(params)
-  
-  
-
-   
-    
-    
