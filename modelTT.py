@@ -39,7 +39,7 @@ class TTCellModel:
              np.savetxt(f,parametersS, fmt='%.8f')
 
         TTCellModel.callCppmodel(np.shape(P)[0],use_gpu)
-        name="out.txt"        
+        name="./out.txt"        
         X=[]
         file = open(name, 'r')
         for row in file:
