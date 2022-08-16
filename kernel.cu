@@ -859,7 +859,7 @@ int main(int argc, char** argv)
 	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 400;
 	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 10000;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  true;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  false;
 
 	int np = int(tf / dt_save + 1);
 
@@ -889,7 +889,7 @@ int main(int argc, char** argv)
 		float* param_g;
 		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float)*4 * 5 * N));
 		printf("aa");
-		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 50 * N, cudaMemcpyHostToDevice));
+		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 5 * N, cudaMemcpyHostToDevice));
 		
 		int nt = 100;
 		int bx=10,by=N/(bx*nt);
