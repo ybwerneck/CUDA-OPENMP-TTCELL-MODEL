@@ -143,7 +143,7 @@ class TTCellModel:
         name="./kernel.o"
         if os.name == 'nt':
             name="./kernel.o"
-        args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" "  
+        args=name +" --n="+str(N)+" "  
         if(use_gpu):
             args=args+"--use_gpu=1"
         print(args)
