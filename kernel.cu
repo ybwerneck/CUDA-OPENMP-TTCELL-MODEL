@@ -966,7 +966,7 @@ int main(int argc, char** argv)
 	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 100;
 	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 100000;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : true;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
 
 
