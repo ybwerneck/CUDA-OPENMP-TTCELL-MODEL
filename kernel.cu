@@ -18,200 +18,7 @@
 #include <fstream>
 #include <sstream>
 
-#define stim_state pars[0] // This must always be the first param of a myocyte model
-#define stim_amplitude pars[1] // And this must always be the second
-#define stim_period pars[2]
-#define stim_start pars[3]
-#define stim_duration pars[4]
-#define R pars[5]
-#define T pars[6]
-#define F pars[7]
-#define Na_o pars[8]
-#define K_o pars[9]
-#define P_kna pars[10]
-#define Ca_o pars[11]
-#define g_K1 pars[12]
-#define g_Kr pars[13]
-#define g_Ks pars[14]
-#define g_Na pars[15]
-#define g_bna pars[16]
-#define g_CaL pars[17]
-#define g_bca pars[18]
-#define g_to pars[19]
-#define P_NaK pars[20]
-#define K_mk pars[21]
-#define K_mNa pars[22]
-#define K_NaCa pars[23]
-#define gamma pars[24]
-#define alpha pars[25]
-#define Km_Nai pars[26]
-#define Km_Ca pars[27]
-#define K_sat pars[28]
-#define g_pCa pars[29]
-#define K_pCa pars[30]
-#define g_pK pars[31]
-#define a_rel pars[32]
-#define b_rel pars[33]
-#define c_rel pars[34]
-#define Vmax_up pars[35]
-#define K_up pars[36]
-#define V_leak pars[37]
-#define tau_g pars[38]
-#define Buf_c pars[39]
-#define K_buf_c pars[40]
-#define Buf_sr pars[41]
-#define K_buf_sr pars[42]
-#define V_c pars[43]
-#define Cm pars[44]
-#define V_sr pars[45]
-#define atp pars[46]
-#define g_atp pars[47]
-
-#define V_old_ Y_old_[0]
-#define Ca_i_old_ Y_old_[1]
-#define Ca_SR_old_ Y_old_[2]
-#define Na_i_old_ Y_old_[3]
-#define K_i_old_ Y_old_[4]
-#define ikatp_old Y_old_[5]
-
-#define Xr1_old_ Y_old_[6]
-#define Xr2_old_ Y_old_[7]
-#define Xs_old_ Y_old_[8]
-#define m_old_ Y_old_[9]
-#define h_old_ Y_old_[10]
-#define j_old_ Y_old_[11]
-#define d_old_ Y_old_[12]
-#define f_old_ Y_old_[13]
-#define fCa_old_ Y_old_[14]
-#define s_old_ Y_old_[15]
-#define r_old_ Y_old_[16]
-#define g_old_ Y_old_[17]
-
-#define V_f_ rhs[0]
-#define Ca_i_f_ rhs[1]
-#define Ca_SR_f_ rhs[2]
-#define Na_i_f_ rhs[3]
-#define K_i_f_ rhs[4]
-#define Xr1_f_ rhs[6]
-#define Xr2_f_ rhs[7]
-#define Xs_f_ rhs[8]
-#define m_f_ rhs[9]
-#define h_f_ rhs[10]
-#define j_f_ rhs[11]
-#define d_f_ rhs[12]
-#define f_f_ rhs[13]
-#define fCa_f_ rhs[14]
-#define s_f_ rhs[15]
-#define r_f_ rhs[16]
-#define g_f_ rhs[17]
-#define ikatp_f rhs[5]
-
-#define Xr1_a_ a[0] //45
-#define Xr2_a_ a[1] 
-#define Xs_a_ a[2]
-#define m_a_ a[3] //48
-#define h_a_ a[4]
-#define j_a_ a[5]
-#define d_a_ a[6] //51
-#define f_a_ a[7]
-#define fCa_a_ a[8]
-#define s_a_ a[9] //54
-#define r_a_ a[10]
-#define g_a_ a[11] //56
-
-#define Xr1_b_ b[0]
-#define Xr2_b_ b[1]
-#define Xs_b_ b[2]
-#define m_b_ b[3]
-#define h_b_ b[4]
-#define j_b_ b[5]
-#define d_b_ b[6]
-#define f_b_ b[7]
-#define fCa_b_ b[8]
-#define s_b_ b[9]
-#define r_b_ b[10]
-#define g_b_ b[11]
-
-#define calc_i_Stim algs[0] 	 
-#define calc_E_Na algs[1] 	 
-#define calc_E_K algs[2] 	 
-#define calc_E_Ks algs[3] 	 
-#define calc_E_Ca algs[4] 	 
-#define calc_alpha_K1 algs[5] 	 
-#define calc_beta_K1 algs[6] 	 
-#define calc_xK1_inf algs[7] 	 
-#define calc_i_K1 algs[8] 	 
-#define calc_i_Kr algs[9] 	 
-#define calc_xr1_inf algs[10] 	 
-#define calc_alpha_xr1 algs[11] 	 
-#define calc_beta_xr1 algs[12] 	 
-#define calc_tau_xr1 algs[13] 	 
-#define calc_xr2_inf algs[14] 	 
-#define calc_alpha_xr2 algs[15] 	 
-#define calc_beta_xr2 algs[16] 	 
-#define calc_tau_xr2 algs[17] 	 
-#define calc_i_Ks algs[18] 	 
-#define calc_xs_inf algs[19] 	 
-#define calc_alpha_xs algs[20] 	 
-#define calc_beta_xs algs[21] 	 
-#define calc_tau_xs algs[22] 	 
-#define calc_i_Na algs[23] 	 
-#define calc_m_inf algs[24] 	 
-#define calc_alpha_m algs[25] 	 
-#define calc_beta_m algs[26] 	 
-#define calc_tau_m algs[27] 	 
-#define calc_h_inf algs[28] 	 
-#define calc_alpha_h algs[29] 	 
-#define calc_beta_h algs[30] 	 
-#define calc_tau_h algs[31] 	 
-#define calc_j_inf algs[32] 	 
-#define calc_alpha_j algs[33] 	 
-#define calc_beta_j algs[34] 	 
-#define calc_tau_j algs[35] 	 
-#define calc_i_b_Na algs[36] 	 
-#define calc_i_CaL algs[37] 	 
-#define calc_d_inf algs[38] 	 
-#define calc_alpha_d algs[39] 	 
-#define calc_beta_d algs[40] 	 
-#define calc_gamma_d algs[41] 	 
-#define calc_tau_d algs[42] 	 
-#define calc_f_inf algs[43] 	 
-#define calc_tau_f algs[44] 	 
-#define calc_alpha_fCa algs[45] 	 
-#define calc_beta_fCa algs[46] 	 
-#define calc_gama_fCa algs[47] 	 
-#define calc_fCa_inf algs[48] 	 
-#define calc_tau_fCa algs[49] 	 
-#define calc_d_fCa algs[50] 	 
-#define calc_i_b_Ca algs[51] 	 
-#define calc_i_to algs[52] 	 
-#define calc_s_inf algs[53] 	 
-#define calc_tau_s algs[54] 	 
-#define calc_r_inf algs[55] 	 
-#define calc_tau_r algs[56] 	 
-#define calc_i_NaK algs[57] 	 
-#define calc_i_NaCa algs[58] 	 
-#define calc_i_p_Ca algs[59] 	 
-#define calc_i_p_K algs[60] 	 
-#define calc_i_rel algs[61] 	 
-#define calc_i_up algs[62] 	 
-#define calc_i_leak algs[63] 	 
-#define calc_g_inf algs[64] 	 
-#define calc_d_g algs[65] 	 
-#define calc_Ca_i_bufc algs[66] 	 
-#define calc_Ca_sr_bufsr algs[67] 	 
-#define EPSILON 1e-8
-#define MKStart 18
-#define MKEnd 18
-#define NLStart 0
-#define NLEnd 6
-#define nStates 18
-#define nStates_HH 12
-#define nAlgs 68
-#define nStates_MKM_max 0
-#define HHStart 6
-
-
+#include "defs.h"
 
 
 
@@ -502,9 +309,18 @@ private:
 };
 
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
+{
+	if (code != cudaSuccess)
+	{
+		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+	}
+}	
 
 
-
+__device__ double* out_g;
 //GPU
 __device__ void  partitionedStep(double* Y_new_, double* pars, double* algs, double* rhs, double* Y_old_, double t, double dt, double** strut = NULL);
 __device__ void step(double* Y_new_, int n, double* as, double* bs, double* Y_old_, double dt);
@@ -801,7 +617,9 @@ __device__ void step(double* Y_new_, int n, double* as, double* bs, double* Y_ol
 	}
 
 }
-__global__ void solveFixed(double* out, double dt, double dt_save, double tf, double* args);
+__global__ void solveFixed( double dt, double dt_save, double tf, double* args);
+
+
 
 //CPU
 void  partitionedStepC(double* Y_new_, double* pars, double* algs, double* rhs, double* Y_old_, double t, double dt, double** strut = NULL);
@@ -1098,6 +916,8 @@ void stepC(double* Y_new_, int n, double* as, double* bs, double* Y_old_, double
 
 }
 void solveFixedCpu(double* out, double dt, double dt_save, double tf, double* args, int tid, int N);
+
+
 int main(int argc, char** argv)
 {
 
@@ -1141,12 +961,12 @@ int main(int argc, char** argv)
 	int method_index = OptionParser::foundOption("method") ? OptionParser::parseDouble("method") : 1;
 	int model_index = 0;
 
-	double dt = OptionParser::foundOption("dt") ? OptionParser::parseDouble("dt") : 0.01;
+	double dt = OptionParser::foundOption("dt") ? OptionParser::parseDouble("dt") : 0.1;
 	double dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parseDouble("dt_save") : 1;
 	double tf = OptionParser::foundOption("tf") ? OptionParser::parseDouble("tf") : 100;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 1000;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 5000;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  false;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  true;
 
 
 
@@ -1172,28 +992,27 @@ int main(int argc, char** argv)
 
 	if (use_gpu == true) {
 		
-		printf(" \n Solve by gpu Grid: %dx%d threads \n", N/100,100);
+		printf(" \n Solve by gpu Grid: %dx%d threads \n", N/10,10);
 		double* param_g;
-		cudaMalloc((void**)&param_g, sizeof(double) * 5 * N);
-		cudaMemcpy(param_g, paramS, sizeof(double) * 5 * N, cudaMemcpyHostToDevice);
+		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(double) * 5 * N));
+		printf("aa");
+		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(double) * 5 * N, cudaMemcpyHostToDevice));
 
 
+		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(double) * (tf / dt_save + 1) * N));
+		solveFixed << <N/10, 10 >> > (dt, dt_save, tf, param_g);
+		gpuErrchk(cudaPeekAtLastError());
 
-		double* out_g;
-		cudaMalloc((void**)&out_g, sizeof(double) * (tf / dt_save + 1) * N);
-		solveFixed << <int(N / 100), 100 >> > (out_g, dt, dt_save, tf, param_g);
+		gpuErrchk(cudaDeviceSynchronize());
 
-
-		cudaDeviceSynchronize();
-
-		cudaMemcpy(out, out_g, sizeof(double) * (tf / dt_save + 1) * N, cudaMemcpyDeviceToHost);
+		gpuErrchk(cudaMemcpy(out, out_g, sizeof(double) * (tf / dt_save + 1) * N , cudaMemcpyDeviceToHost));
 
 
 	}
 
 	else {
 		printf(" \n Solve by cpu 4 threads \n");
-#pragma omp parallel for  num_threads(4)
+#pragma omp parallel for  num_threads(4)x
 		for (int i = 0; i < N; i++)
 			solveFixedCpu(out, dt, dt_save, tf, paramS, i, N);
 
@@ -1235,16 +1054,17 @@ int main(int argc, char** argv)
 }
 
 
-__global__ void solveFixed(double* out_g, double dt, double dt_save, double tf, double* args)
+__global__ void solveFixed(double dt, double dt_save, double tf, double* args)
 {
+	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 
 	double* Y_old_ = new double[18];
 	int np = int(tf / dt_save);
 
 	double* Y_new_ = new double[18];
 
-		
-	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
+
+	
 
 	double** Tr = NULL;
 	if (nStates_MKM_max > 0) {
@@ -1281,15 +1101,15 @@ __global__ void solveFixed(double* out_g, double dt, double dt_save, double tf, 
 			out_g[k + tid * np] = Y_new_[0];
 			k++;
 			t_save = 0;
-			
-
+			std:printf("\n%d %d\n",tid, k + tid * np);
+		//	printf("\n%f \n", Y_new_[0]);
 
 			
 		}
 	
 	}
-	out_g[(tid + 1) * np - 1] = aux;
-	//	cout << " -100 " << aux << "]";
+		out_g[(tid + 1) * np - 1] = aux;
+
 }
 
 void solveFixedCpu(double* out_g, double dt, double dt_save, double tf, double* args, int tid, int N)
@@ -1319,6 +1139,7 @@ void solveFixedCpu(double* out_g, double dt, double dt_save, double tf, double* 
 	double aux2 = Y_old_[0];
 	double t_save = 0, aux = 0;
 	int k = 0;
+	#pragma unroll
 	for (double t = 0; t <= tf; t += dt) {
 
 
