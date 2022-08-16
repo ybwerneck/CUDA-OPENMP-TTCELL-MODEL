@@ -20,9 +20,9 @@ import re
 import collections
 import os
 class TTCellModel:
-    tf=400
+    tf=100
     ti=0
-    dt=0.01
+    dt=0.1
     dtS=1
     parametersN=["ki","ko","gna","gca","atp"]
     K_o_default=5.40e+00
@@ -50,9 +50,10 @@ class TTCellModel:
                except:
                    aux.append(-100)
            ads=TTCellModel.ads(aux,[0.5,0.9] )
-           print(ads)
-           k={"Wf": aux[:-1],"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":aux[-2]}
-           
+           #print(ads)
+           k={"Wf": aux[:-1]}
+           #,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":aux[-2]}
+          
            X.append(k)
    
         return X
@@ -141,12 +142,43 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False):     
         
-        name="./kernel.o"
+        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
         if os.name == 'nt':
-            name="./kernel.o"
-        args=name +" --n="+str(N)+" "  
+            name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+
+        args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" "  
         if(use_gpu):
             args=args+"--use_gpu=1"
         print(args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
         print( output.stdout.read().decode("utf-8"))
+        # matrix={}
+  
+        # try:
+        #     string = output.stdout.read().decode("utf-8")
+        #     matrix = np.matrix(string)
+        #     print(matrix)
+        
+        # except:
+        #     print(args)
+        #     print(string)
+        #     print("\n")
+
+
+
+       
+        # try: 
+        #     ads=TTCellModel.ads(matrix[:-1,1],[0.5,0.9])
+        #     return {"Wf": matrix[:-1],"dVmax":matrix[-1,1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":matrix[-2,1]}
+        # except:
+             
+        #      print(args)
+        #      print("out",string)
+        #      print(params)
+        #      return TTCellModel.callCppmodel(params)
+  
+  
+
+   
+    
+    

@@ -317,7 +317,7 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
 		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
 		if (abort) exit(code);
 	}
-}	
+}
 
 
 __device__ float* out_g;
@@ -422,7 +422,7 @@ __device__ void calc_hh_coeff(float* a, float* b, float* pars, float* algs, floa
 __device__ void calc_rhs_mk(float* rhs, float* pars, float* algs, float* Y_old_, float t)
 {
 }
-__device__ float calc_stimulus(float* args, float t)
+__device__ float calc_stimulus(float* pars, float t)
 {
 	if (stim_state < 0)
 		return 0;
@@ -436,10 +436,9 @@ __device__ float calc_stimulus(float* args, float t)
 	}
 	else return 0;
 }
-__device__ void calc_algs_nl(float* algs, float* args, float* Y_old_, float time,int tid,int N)
+__device__ void calc_algs_nl(float* algs, float* pars, float* Y_old_, float time)
 {
-	
-	calc_i_Stim = calc_stimulus(args, time);	//0
+	calc_i_Stim = calc_stimulus(pars, time);	//0
 	calc_E_Na = (((R * T) / F) * log((Na_o / Na_i_old_)));	//2
 	calc_E_K = (((R * T) / F) * log((K_o / K_i_old_)));	//3
 	calc_E_Ks = (((R * T) / F) * log(((K_o + (P_kna * Na_o)) / (K_i_old_ + (P_kna * Na_i_old_)))));	//4
@@ -465,11 +464,11 @@ __device__ void calc_algs_nl(float* algs, float* args, float* Y_old_, float time
 	calc_xK1_inf = (calc_alpha_K1 / (calc_alpha_K1 + calc_beta_K1));	//8
 	calc_i_K1 = (g_K1 * calc_xK1_inf * pow((K_o / 5.40e+00), 1.0 / 2.0) * (V_old_ - calc_E_K));	//9
 }
-__device__ void calc_rhs_nl(float* rhs, float* args, float* algs, float* Y_old_, float t,int tid, int N)
+__device__ void calc_rhs_nl(float* rhs, float* pars, float* algs, float* Y_old_, float t)
 {
 
 
-	calc_algs_nl(algs, args, Y_old_, t,tid,N);
+	calc_algs_nl(algs, pars, Y_old_, t);
 	float gkatp_f = 4E6 / (1 + pow((atp / 0.25), 2.0)) * (195E-6 / (5E+3)) * pow((K_o / K_i_old_), 0.24);
 
 	//printf("\n%.15f\n", gkatp_f * (V_old_ - 5E3));
@@ -485,20 +484,69 @@ __device__ void calc_rhs_nl(float* rhs, float* args, float* algs, float* Y_old_,
 __device__ void initModel(float* pars, float* Y_old_, float* args)
 {
 
-	unsigned int bid = blockIdx.y * gridDim.x + blockIdx.x;
-	unsigned int tid = threadIdx.x + (blockDim.x) * bid;;
+	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 
-	unsigned int N = blockDim.x * gridDim.x * gridDim.y;
-	
+	unsigned int N = blockDim.x * gridDim.x;
+
+	stim_state = 0;
+	stim_amplitude = -5.20e+01;
+	stim_period = 1.0e+03;
+	stim_start = 5.0e+00;
+	stim_duration = 1.0e+00;
+	R = 8.3144720e+03;
+	T = 3.10e+02;
+	F = 9.64853415e+04;
+	Na_o = 1.40e+02;
+	K_o = 5.40e+00;
+	P_kna = 3.0e-02;
+	Ca_o = 2.0e+00;
+	g_K1 = 5.4050e+00;
+	g_Kr = 0.096; //0.134
+	g_Ks = 0.245; //0.270
+	g_Na = 1.48380e+01;
+	g_bna = 2.90e-04;
+	g_CaL = 1.750e-04;
+	g_bca = 5.920e-04;
+	g_to = 2.940e-01;
+	P_NaK = 1.3620e+00;
+	K_mk = 1.0e+00;
+	K_mNa = 4.0e+01;
+	K_NaCa = 1.0e+03;
+	gamma = 3.50e-01;
+	alpha = 2.50e+00;
+	Km_Nai = 8.750e+01;
+	Km_Ca = 1.380e+00;
+	K_sat = 1.0e-01;
+	g_pCa = 8.250e-01;
+	K_pCa = 5.0e-04;
+	g_pK = 1.460e-02;
+	a_rel = 1.64640e-02;
+	b_rel = 2.50e-01;
+	c_rel = 8.2320e-03;
+	Vmax_up = 4.250e-04;
+	K_up = 2.50e-04;
+	V_leak = 8.0e-05;
+	tau_g = 2.0e+00;
+	Buf_c = 1.50e-01;
+	K_buf_c = 1.0e-03;
+	Buf_sr = 1.0e+01;
+	K_buf_sr = 3.0e-01;
+	V_c = 1.64040e-02;
+	Cm = 1.850e-01;
+	V_sr = 1.0940e-03;
+
+	g_Na = args[tid + 2 * N];
+	atp = args[tid + 4 * N];
+	K_o = args[tid + 3 * N];
+	g_CaL = args[tid + N];
 
 
-
-	printf("\n ss %d %f %f %f %f\n",tid, g_Na,atp,K_o,g_CaL);
 
 	// K_i_old_ = args[0];
 
 
-	
+	g_pCa = 1 / (1 + pow((1.4 / atp), 2.6));
+	g_atp = 1 / (1 + pow((atp / 0.25), 2.0));
 
 
 	V_old_ = -8.620e+01;
@@ -526,7 +574,7 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 
 
 }
-__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut, int tid, int N)
+__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut)
 {
 
 
@@ -540,7 +588,7 @@ __device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float*
 
 	}
 
-	calc_rhs_nl(rhs, pars, algs, Y_old_, t,tid,N);
+	calc_rhs_nl(rhs, pars, algs, Y_old_, t);
 	for (int l = NLStart; l < NLEnd; l++)
 		Y_new_[l] = Y_old_[l] + dt * rhs[l];
 }
@@ -569,7 +617,7 @@ __device__ void step(float* Y_new_, int n, float* as, float* bs, float* Y_old_, 
 	}
 
 }
-__global__ void solveFixed( float* out_g,float dt, float dt_save, float tf, float* args);
+__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args);
 
 
 
@@ -688,9 +736,9 @@ float calc_stimulusC(float* pars, float t)
 	}
 	else return 0;
 }
-void calc_algs_nlC(float* algs, float* args, float* Y_old_, float time,int tid, int N)
+void calc_algs_nlC(float* algs, float* pars, float* Y_old_, float time)
 {
-	calc_i_Stim = calc_stimulusC(args, time);	//0
+	calc_i_Stim = calc_stimulusC(pars, time);	//0
 	calc_E_Na = (((R * T) / F) * log((Na_o / Na_i_old_)));	//2
 	calc_E_K = (((R * T) / F) * log((K_o / K_i_old_)));	//3
 	calc_E_Ks = (((R * T) / F) * log(((K_o + (P_kna * Na_o)) / (K_i_old_ + (P_kna * Na_i_old_)))));	//4
@@ -716,14 +764,15 @@ void calc_algs_nlC(float* algs, float* args, float* Y_old_, float time,int tid, 
 	calc_xK1_inf = (calc_alpha_K1 / (calc_alpha_K1 + calc_beta_K1));	//8
 	calc_i_K1 = (g_K1 * calc_xK1_inf * pow((K_o / 5.40e+00), 1.0 / 2.0) * (V_old_ - calc_E_K));	//9
 }
-void calc_rhs_nlC(float* rhs, float* args, float* algs, float* Y_old_, float t,int tid,int  N)
+void calc_rhs_nlC(float* rhs, float* pars, float* algs, float* Y_old_, float t)
 {
 
 
-	calc_algs_nlC(algs, args, Y_old_, t,tid,N);
+	calc_algs_nlC(algs, pars, Y_old_, t);
 	float gkatp_f = 4E6 / (1 + pow((atp / 0.25), 2.0)) * (195E-6 / (5E+3)) * pow((K_o / K_i_old_), 0.24);
 
-	
+	//printf("\n%.15f\n", gkatp_f * (V_old_ - 5E3));
+
 	ikatp_f = gkatp_f * (V_old_ - 5E3);
 	V_f_ = -(-ikatp_f + calc_i_K1 + +calc_i_Kr + calc_i_Ks + calc_i_CaL + calc_i_NaK + calc_i_Na + calc_i_b_Na + calc_i_NaCa + calc_i_b_Ca + calc_i_p_K + calc_i_p_Ca + calc_i_Stim);
 	Ca_i_f_ = ((calc_Ca_i_bufc * (((calc_i_leak - calc_i_up) + calc_i_rel) - (((1.0e+00 * ((calc_i_CaL + calc_i_b_Ca + calc_i_p_Ca) - (2.0e+00 * calc_i_NaCa))) / (2.0e+00 * 1.0e+00 * V_c * F)) * Cm))));	// 81
@@ -738,8 +787,66 @@ void initModelC(float* pars, float* Y_old_, float* args, int tid, int N)
 
 
 
-	
-	printf("\n ss %d %f %f %f %f\n", tid, g_Na, atp, K_o, g_CaL);
+	stim_state = 0;
+	stim_amplitude = -5.20e+01;
+	stim_period = 1.0e+03;
+	stim_start = 5.0e+00;
+	stim_duration = 1.0e+00;
+	R = 8.3144720e+03;
+	T = 3.10e+02;
+	F = 9.64853415e+04;
+	Na_o = 1.40e+02;
+	K_o = 5.40e+00;
+	P_kna = 3.0e-02;
+	Ca_o = 2.0e+00;
+	g_K1 = 5.4050e+00;
+	g_Kr = 0.096; //0.134
+	g_Ks = 0.245; //0.270
+	g_Na = 1.48380e+01;
+	g_bna = 2.90e-04;
+	g_CaL = 1.750e-04;
+	g_bca = 5.920e-04;
+	g_to = 2.940e-01;
+	P_NaK = 1.3620e+00;
+	K_mk = 1.0e+00;
+	K_mNa = 4.0e+01;
+	K_NaCa = 1.0e+03;
+	gamma = 3.50e-01;
+	alpha = 2.50e+00;
+	Km_Nai = 8.750e+01;
+	Km_Ca = 1.380e+00;
+	K_sat = 1.0e-01;
+	g_pCa = 8.250e-01;
+	K_pCa = 5.0e-04;
+	g_pK = 1.460e-02;
+	a_rel = 1.64640e-02;
+	b_rel = 2.50e-01;
+	c_rel = 8.2320e-03;
+	Vmax_up = 4.250e-04;
+	K_up = 2.50e-04;
+	V_leak = 8.0e-05;
+	tau_g = 2.0e+00;
+	Buf_c = 1.50e-01;
+	K_buf_c = 1.0e-03;
+	Buf_sr = 1.0e+01;
+	K_buf_sr = 3.0e-01;
+	V_c = 1.64040e-02;
+	Cm = 1.850e-01;
+	V_sr = 1.0940e-03;
+
+	g_Na = args[tid + 2 * N];
+	atp = args[tid + 4 * N];
+	K_o = args[tid + 3 * N];
+	g_CaL = args[tid + N];
+
+
+
+	// K_i_old_ = args[0];
+
+
+	g_pCa = 1 / (1 + pow((1.4 / atp), 2.6));
+	g_atp = 1 / (1 + pow((atp / 0.25), 2.0));
+
 
 	V_old_ = -8.620e+01;
 
@@ -766,7 +873,7 @@ void initModelC(float* pars, float* Y_old_, float* args, int tid, int N)
 
 
 }
-void stepC(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut,int tid, int N)
+void stepC(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut)
 {
 
 
@@ -780,7 +887,7 @@ void stepC(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, f
 
 	}
 
-	calc_rhs_nlC(rhs, pars, algs, Y_old_, t, tid, N);
+	calc_rhs_nlC(rhs, pars, algs, Y_old_, t);
 	for (int l = NLStart; l < NLEnd; l++)
 		Y_new_[l] = Y_old_[l] + dt * rhs[l];
 }
@@ -814,7 +921,7 @@ void solveFixedCpu(float* out, float dt, float dt_save, float tf, float* args, i
 int main(int argc, char** argv)
 {
 
-	
+
 
 	//Simulation Parameters
 	OptionParser::addOption("model", "Model: 0 -> ten Tusscher 2004, 1 -> Fox 2002, 2 -> Bondarenko 2004");
@@ -848,7 +955,7 @@ int main(int argc, char** argv)
 	float K_o_default = 5.40e+00;
 	float g_CaL_default = 1.750e-04;
 	float g_Na_default = 1.48380e+01;
-	float K_i_default = 138.3; 
+	float K_i_default = 138.3;
 	float atp_default = 5.4E0;
 
 	int method_index = OptionParser::foundOption("method") ? OptionParser::parsefloat("method") : 1;
@@ -856,16 +963,16 @@ int main(int argc, char** argv)
 
 	float dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.1;
 	float dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
-	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 400;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 10000;
+	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 100;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 100000;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  false;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : true;
 
-	int np = int(tf / dt_save + 1);
+
 
 	float* paramS = (float*)malloc(sizeof(float) * 5 * N);
 	float* out;
-	out = (float*)malloc(sizeof(float) *  np* N);
+	out = (float*)malloc(sizeof(float) * (tf / dt_save + 1) * N);
 
 
 
@@ -881,32 +988,29 @@ int main(int argc, char** argv)
 	}
 
 
-	printf(" \n Problem: %d cells \n",N);
-	
+	printf(" \n Problem: %d cells \n", N);
+
+	printf(" \n Processing \n");
+
 	if (use_gpu == true) {
-		
-		printf(" \n Solve by gpu Grid: %dx%d threads \n", N/10,10);
+
+		printf(" \n Solve by gpu Grid: %dx%d threads \n", N / 200, 200);
 		float* param_g;
-		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float)*4 * 5 * N));
-		printf("aa");
+		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float) * 5 * N));
 		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 5 * N, cudaMemcpyHostToDevice));
-		
-		int nt = 100;
-		int bx=10,by=N/(bx*nt);
-		dim3 k(bx,by);
+
+
+
 		float* out_g;
-		int np = int(tf / dt_save + 1);
-		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) *np  * N));
-		solveFixed << < k,nt>> > (out_g, dt, dt_save, tf, param_g);
+		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) * (tf / dt_save + 1)  * N));
+		solveFixed << <N / 200, 200 >> > (out_g, dt, dt_save, tf, param_g);
 		gpuErrchk(cudaPeekAtLastError());
 
 		gpuErrchk(cudaDeviceSynchronize());
 
-		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * np * N, cudaMemcpyDeviceToHost));
+		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * (tf / dt_save + 1) * N, cudaMemcpyDeviceToHost));
 
 
-		free(out_g);
-		free(param_g);
 	}
 
 	else {
@@ -915,7 +1019,7 @@ int main(int argc, char** argv)
 		for (int i = 0; i < N; i++)
 			solveFixedCpu(out, dt, dt_save, tf, paramS, i, N);
 
-		free(paramS);
+
 	}
 
 
@@ -926,6 +1030,8 @@ int main(int argc, char** argv)
 
 
 
+
+	printf(" \n Writing Results\n");
 
 
 	fstream output;
@@ -948,23 +1054,21 @@ int main(int argc, char** argv)
 
 	printf("\n OUTPUT FILE READY!\n");
 
-	free(out); 
+
 	return 0;
 }
 
 
-__global__ void solveFixed(float* out_g,float dt, float dt_save, float tf, float* args)
+__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args)
 {
-	
-	unsigned int bid = blockIdx.y * gridDim.x +blockIdx.x ;
-	unsigned int tid = threadIdx.x + (blockDim.x)*bid;
-	printf("\n%d %d\n", tid, bid);
+	int tid = threadIdx.x + blockDim.x * blockIdx.x;
 
-
-	float* Y_old_ = new float[18];
+	float Y_old_ [18];
 	int np = int(tf / dt_save);
 
-	float* Y_new_ = new float[18];
+	float Y_new_ [18];
+
+
 
 
 	float** Tr = NULL;
@@ -974,22 +1078,23 @@ __global__ void solveFixed(float* out_g,float dt, float dt_save, float tf, float
 			Tr[i] = new float[nStates_MKM_max];
 	}
 	// rhs will store the righ-hand-side values of NL and MK ODEs, and the coefficients a and b of the HH equations (for the RL method)
-	float* rhs = new float[nStates + nStates_HH];
-	float* algs = new float[nAlgs];
-	
-	
-	unsigned int N = blockDim.x * gridDim.x * gridDim.y;
-	initModel(args, Y_old_, args);
+	float rhs [nStates + nStates_HH];
+	float algs[nAlgs];
+	float params[48];
+
+
+	initModel(params, Y_old_, args);
 
 	//	cout << "[ ";
 	float aux2 = Y_old_[0];
 	float t_save = 0, aux = 0;
 	int k = 0;
+#pragma unroll
 	for (float t = 0; t <= tf; t += dt) {
 
 
 
-		step(Y_new_, args, algs, rhs, Y_old_, t, dt, Tr,tid,N);
+		step(Y_new_, params, algs, rhs, Y_old_, t, dt, Tr);
 
 		float dv = Y_new_[0] - Y_old_[0];
 		if (dv * dv > aux * aux)
@@ -1000,16 +1105,16 @@ __global__ void solveFixed(float* out_g,float dt, float dt_save, float tf, float
 		if (t_save >= dt_save) {
 
 			out_g[k + tid * np] = Y_new_[0];
-			k++;
+		
 			t_save = 0;
-		//	std:printf("\n%d %d\n",tid, k + tid * np);
-			printf("\n%d %f \n",k, Y_new_[0]);
-			//	printf("\n%d\n", tid);
-			
-		}
 	
+			//	printf("\n%f \n", Y_new_[0]);
+
+			k++;
+		}
+
 	}
-		//out_g[(tid + 1) * np - 1] = aux;
+	out_g[(tid + 1) * np - 1] = aux;
 
 }
 
@@ -1032,19 +1137,20 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 	float* rhs = new float[nStates + nStates_HH];
 	float* algs = new float[nAlgs];
 	float* params = new float[48];
-	
+
+
 	initModelC(params, Y_old_, args, tid, N);
 
 	//	cout << "[ ";
 	float aux2 = Y_old_[0];
 	float t_save = 0, aux = 0;
 	int k = 0;
-	#pragma unroll
+#pragma unroll
 	for (float t = 0; t <= tf; t += dt) {
 
 
 
-		stepC(Y_new_,args, algs, rhs, Y_old_, t, dt, Tr,tid,N);
+		stepC(Y_new_, params, algs, rhs, Y_old_, t, dt, Tr);
 
 		float dv = Y_new_[0] - Y_old_[0];
 		if (dv * dv > aux * aux)
@@ -1057,10 +1163,10 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 			out_g[k + tid * np] = Y_new_[0];
 			k++;
 			t_save = 0;
+			//printf(" %d %f ", tid, Y_new_[0]);
 
 
-
-			;
+			
 		}
 		out_g[(tid + 1) * np - 1] = aux;
 	}
@@ -1836,7 +1942,7 @@ bool OptionParser::has(const string& option) {
 
 float OptionParser::parsefloat(const string& option) {
 	float aux;
-	sscanf(cmd.optionValue(option).c_str(), "%lf", &aux);
+	sscanf(cmd.optionValue(option).c_str(), "%f", &aux);
 	return aux;
 }
 
