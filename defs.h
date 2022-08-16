@@ -1,52 +1,61 @@
 #pragma once
-#define stim_state pars[0] // This must always be the first param of a myocyte model
-#define stim_amplitude pars[1] // And this must always be the second
-#define stim_period pars[2]
-#define stim_start pars[3]
-#define stim_duration pars[4]
-#define R pars[5]
-#define T pars[6]
-#define F pars[7]
-#define Na_o pars[8]
-#define K_o pars[9]
-#define P_kna pars[10]
-#define Ca_o pars[11]
-#define g_K1 pars[12]
-#define g_Kr pars[13]
-#define g_Ks pars[14]
-#define g_Na pars[15]
-#define g_bna pars[16]
-#define g_CaL pars[17]
-#define g_bca pars[18]
-#define g_to pars[19]
-#define P_NaK pars[20]
-#define K_mk pars[21]
-#define K_mNa pars[22]
-#define K_NaCa pars[23]
-#define gamma pars[24]
-#define alpha pars[25]
-#define Km_Nai pars[26]
-#define Km_Ca pars[27]
-#define K_sat pars[28]
-#define g_pCa pars[29]
-#define K_pCa pars[30]
-#define g_pK pars[31]
-#define a_rel pars[32]
-#define b_rel pars[33]
-#define c_rel pars[34]
-#define Vmax_up pars[35]
-#define K_up pars[36]
-#define V_leak pars[37]
-#define tau_g pars[38]
-#define Buf_c pars[39]
-#define K_buf_c pars[40]
-#define Buf_sr pars[41]
-#define K_buf_sr pars[42]
-#define V_c pars[43]
-#define Cm pars[44]
-#define V_sr pars[45]
-#define atp pars[46]
-#define g_atp pars[47]
+#define stim_state  0 
+#define stim_amplitude  -5.20e+01
+#define stim_period  1.0e+03
+#define stim_start  5.0e+00
+#define stim_duration  1.0e+00
+#define R  8.3144720e+03
+#define T  3.10e+02
+#define F  9.64853415e+04
+#define Na_o  1.40e+02
+#define K_o  5.40e+00
+#define P_kna  3.0e-02
+#define Ca_o  2.0e+00
+#define g_K1  5.4050e+00
+#define g_Kr  0.096 //0.134
+#define g_Ks  0.245 //0.270
+#define g_Na  1.48380e+01
+#define g_bna  2.90e-04
+#define g_CaL  1.750e-04
+#define g_bca  5.920e-04
+#define g_to  2.940e-01
+#define P_NaK  1.3620e+00
+#define K_mk  1.0e+00
+#define K_NaCa  1.0e+03
+#define gamma  3.50e-01
+#define alpha  2.50e+00
+#define Km_Nai  8.750e+01
+#define Km_Ca  1.380e+00
+#define K_sat  1.0e-01
+#define g_pCa  8.250e-01
+#define K_pCa  5.0e-04
+#define g_pK 1.460e-02
+#define a_rel  1.64640e-02
+#define b_rel  2.50e-01
+#define c_rel  8.2320e-03
+#define Vmax_up  4.250e-04
+#define K_up  2.50e-04
+#define V_leak  8.0e-05
+#define tau_g  2.0e+00
+#define Buf_c  1.50e-01
+#define K_buf_c  1.0e-03
+#define Buf_sr  1.0e+01
+#define K_buf_sr  3.0e-01
+#define V_c  1.64040e-02
+#define Cm  1.850e-01
+#define V_sr  1.0940e-03
+#define K_mNa  4.0e+01
+
+#define g_Na  args[tid + 2 * N]
+#define atp  args[tid + 4 * N]
+#define K_o  args[tid + 3 * N]
+#define g_CaL  args[tid + N]
+#define g_pCa  1 / (1 + pow((1.4 / atp), 2.6))
+#define g_atp  1 / (1 + pow((atp / 0.25), 2.0))
+
+
+
+
 
 #define V_old_ Y_old_[0]
 #define Ca_i_old_ Y_old_[1]
