@@ -856,16 +856,16 @@ int main(int argc, char** argv)
 
 	float dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.1;
 	float dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
-	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 100;
+	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 400;
 	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 10000;
 
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false :  true;
 
-
+	int np = int(tf / dt_save + 1);
 
 	float* paramS = (float*)malloc(sizeof(float) * 5 * N);
 	float* out;
-	out = (float*)malloc(sizeof(float) * (tf / dt_save + 1) * N);
+	out = (float*)malloc(sizeof(float) *  np* N);
 
 
 
@@ -889,14 +889,14 @@ int main(int argc, char** argv)
 		float* param_g;
 		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float)*4 * 5 * N));
 		printf("aa");
-		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 5 * N, cudaMemcpyHostToDevice));
+		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 50 * N, cudaMemcpyHostToDevice));
 		
 		int nt = 100;
 		int bx=10,by=N/(bx*nt);
 		dim3 k(bx,by);
 		float* out_g;
 		int np = int(tf / dt_save + 1);
-		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float)*4 *np  * N));
+		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) *np  * N));
 		solveFixed << < k,nt>> > (out_g, dt, dt_save, tf, param_g);
 		gpuErrchk(cudaPeekAtLastError());
 
@@ -905,6 +905,8 @@ int main(int argc, char** argv)
 		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * np * N, cudaMemcpyDeviceToHost));
 
 
+		free(out_g);
+		free(param_g);
 	}
 
 	else {
@@ -913,7 +915,7 @@ int main(int argc, char** argv)
 		for (int i = 0; i < N; i++)
 			solveFixedCpu(out, dt, dt_save, tf, paramS, i, N);
 
-
+		free(paramS);
 	}
 
 
@@ -946,7 +948,7 @@ int main(int argc, char** argv)
 
 	printf("\n OUTPUT FILE READY!\n");
 
-
+	free(out); 
 	return 0;
 }
 
