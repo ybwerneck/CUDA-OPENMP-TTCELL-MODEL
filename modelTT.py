@@ -50,8 +50,9 @@ class TTCellModel:
                except:
                    aux.append(-100)
            ads=TTCellModel.ads(aux,[0.5,0.9] )
+           print(ads)
            k={"Wf": aux[:-1],"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":aux[-2]}
-          
+           
            X.append(k)
    
         return X
