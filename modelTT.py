@@ -142,9 +142,9 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False):     
         
-        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+        name="./kernel.o"
         if os.name == 'nt':
-            name="./kernel.o"
+            name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
 
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" "  
         if(use_gpu):
