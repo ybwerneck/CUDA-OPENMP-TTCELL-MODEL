@@ -986,7 +986,7 @@ int main(int argc, char** argv)
 	string o;
 	i= (OptionParser::foundOption("i") ? OptionParser::optionValue("i") : "m.txt").c_str();
 	o = (OptionParser::foundOption("o") ? OptionParser::optionValue("o") : "output.txt").c_str();
-	printf("input:  %s  output: %s ", i, o);
+//	printf("input:  %s  output: %s ", i, o);
 	printf(" \n Problem: %d cells \n", N);
 
 	int TT = int(tf - ti);
