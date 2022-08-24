@@ -144,7 +144,7 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False):     
         
-        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+        name="./kernel.o"
         if os.name == 'nt':
             name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
 
