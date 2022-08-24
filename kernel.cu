@@ -535,14 +535,15 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 	Cm = 1.850e-01;
 	V_sr = 1.0940e-03;
 
-	g_Na = args[tid + 2 * N];
+	g_Na = args[tid ];
 	atp = args[tid + 4 * N];
 	K_o = args[tid + 3 * N];
 	g_CaL = args[tid + N];
-
+	K_i_old_ = args[tid + 2*N ];
 
 
 	// K_i_old_ = args[0];
+
 
 
 	g_pCa = 1 / (1 + pow((1.4 / atp), 2.6));
@@ -570,7 +571,7 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 	Ca_SR_old_ = 0.56;//2.0e-01;
 	Na_i_old_ = 11.6;//1.160e+01;
 
-	K_i_old_ = 138.3;//1.3830e+02;
+
 
 
 }
@@ -834,14 +835,15 @@ void initModelC(float* pars, float* Y_old_, float* args, int tid, int N)
 	Cm = 1.850e-01;
 	V_sr = 1.0940e-03;
 
-	g_Na = args[tid + 2 * N];
-	atp = args[tid + 4 * N];
-	K_o = args[tid + 3 * N];
+
+	g_Na = args[tid];
 	g_CaL = args[tid + N];
+	K_i_old_ = args[tid + 2 * N];
+	K_o = args[tid + 3 * N];
+	atp = args[tid + 4 * N];
 
 
 
-	// K_i_old_ = args[0];
 
 
 	g_pCa = 1 / (1 + pow((1.4 / atp), 2.6));
@@ -964,9 +966,9 @@ int main(int argc, char** argv)
 	float dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.1;
 	float dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
 	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 100;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 100000;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 1000000;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : true;
 
 
 

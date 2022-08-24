@@ -39,7 +39,7 @@ class TTCellModel:
              np.savetxt(f,parametersS, fmt='%.8f')
 
         TTCellModel.callCppmodel(np.shape(P)[0],use_gpu)
-        name="./out.txt"        
+        name="out.txt"        
         X=[]
         file = open(name, 'r')
         for row in file:
@@ -51,9 +51,11 @@ class TTCellModel:
                    aux.append(-100)
            ads=TTCellModel.ads(aux,[0.5,0.9] )
            #print(ads)
-           k={"Wf": aux[:-1]}
-           #,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":aux[-2]}
-          
+           try:
+               k={"Wf": aux[:-1] ,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vreps":aux[-2]}
+           except:
+             k={"Wf": aux[:-1] }
+             print("ADCALCERROR ",ads)
            X.append(k)
    
         return X
@@ -142,7 +144,7 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False):     
         
-        name="./kernel.o"
+        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
         if os.name == 'nt':
             name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
 
