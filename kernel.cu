@@ -535,11 +535,11 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 	Cm = 1.850e-01;
 	V_sr = 1.0940e-03;
 
-	g_Na = args[tid ];
+	g_Na = args[tid];
 	atp = args[tid + 4 * N];
 	K_o = args[tid + 3 * N];
 	g_CaL = args[tid + N];
-	K_i_old_ = args[tid + 2*N ];
+	K_i_old_ = args[tid + 2 * N];
 
 
 	// K_i_old_ = args[0];
@@ -618,7 +618,6 @@ __device__ void step(float* Y_new_, int n, float* as, float* bs, float* Y_old_, 
 	}
 
 }
-__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args);
 
 
 
@@ -917,7 +916,14 @@ void stepC(float* Y_new_, int n, float* as, float* bs, float* Y_old_, float dt)
 	}
 
 }
-void solveFixedCpu(float* out, float dt, float dt_save, float tf, float* args, int tid, int N);
+
+
+void solveFixedCpu(float* out, float dt, float dt_save, float tf, float* args, int tid, int N, float ti);
+__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args, float ti);
+
+
+
+#define np int((tf-ti)/dt_save) +1
 
 
 int main(int argc, char** argv)
@@ -965,16 +971,20 @@ int main(int argc, char** argv)
 
 	float dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.1;
 	float dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
-	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 100;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 1000000;
+	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 1100;
+	float ti = OptionParser::foundOption("tf") ? OptionParser::parsefloat("ti") : 1000;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 600;
 
-	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : true;
+	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
 
+	printf(" \n Problem: %d cells \n", N);
 
+	int TT = int(tf - ti);
+	printf("\n Output timepoints per cell  = % d", TT);
 	float* paramS = (float*)malloc(sizeof(float) * 5 * N);
 	float* out;
-	out = (float*)malloc(sizeof(float) * (tf / dt_save + 1) * N);
+	out = (float*)malloc(sizeof(float) * (np) * N);
 
 
 
@@ -990,7 +1000,7 @@ int main(int argc, char** argv)
 	}
 
 
-	printf(" \n Problem: %d cells \n", N);
+
 
 	printf(" \n Processing \n");
 
@@ -1004,13 +1014,13 @@ int main(int argc, char** argv)
 
 
 		float* out_g;
-		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) * (tf / dt_save + 1)  * N));
-		solveFixed << <N / 200, 200 >> > (out_g, dt, dt_save, tf, param_g);
+		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) * (np)  * N));
+		solveFixed << <N / 200, 200 >> > (out_g, dt, dt_save, tf, param_g,ti);
 		gpuErrchk(cudaPeekAtLastError());
 
 		gpuErrchk(cudaDeviceSynchronize());
 
-		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * (tf / dt_save + 1) * N, cudaMemcpyDeviceToHost));
+		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * (np) * N, cudaMemcpyDeviceToHost));
 
 
 	}
@@ -1019,7 +1029,7 @@ int main(int argc, char** argv)
 		printf(" \n Solve by cpu 4 threads \n");
 #pragma omp parallel for  num_threads(4)x
 		for (int i = 0; i < N; i++)
-			solveFixedCpu(out, dt, dt_save, tf, paramS, i, N);
+			solveFixedCpu(out, dt, dt_save, tf, paramS, i, N,ti);
 
 
 	}
@@ -1039,12 +1049,12 @@ int main(int argc, char** argv)
 	fstream output;
 	output.open("out.txt", fstream::out);
 
-
+	
 	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < tf / dt_save; j++) {
+		for (int j = 0; j < TT / dt_save; j++) {
 			if (j != 0)
 				output << " ";
-			output << out[j + i * int(tf / dt_save)];
+			output << out[j + i * np];
 		}
 		output << std::endl;
 	}
@@ -1061,14 +1071,14 @@ int main(int argc, char** argv)
 }
 
 
-__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args)
+__global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, float* args, float ti)
 {
 	int tid = threadIdx.x + blockDim.x * blockIdx.x;
 
-	float Y_old_ [18];
-	int np = int(tf / dt_save);
+	float Y_old_[18];
 
-	float Y_new_ [18];
+
+	float Y_new_[18];
 
 
 
@@ -1080,7 +1090,7 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 			Tr[i] = new float[nStates_MKM_max];
 	}
 	// rhs will store the righ-hand-side values of NL and MK ODEs, and the coefficients a and b of the HH equations (for the RL method)
-	float rhs [nStates + nStates_HH];
+	float rhs[nStates + nStates_HH];
 	float algs[nAlgs];
 	float params[48];
 
@@ -1103,28 +1113,32 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 			aux = dv;
 		for (int l = 0; l < nStates; l++) Y_old_[l] = Y_new_[l];
 
-		t_save += dt;
-		if (t_save >= dt_save) {
 
-			out_g[k + tid * np] = Y_new_[0];
-		
-			t_save = 0;
-	
-			//	printf("\n%f \n", Y_new_[0]);
+		if (t >= ti) {
+			t_save += dt;
 
-			k++;
+			if (t_save >= dt_save) {
+
+				out_g[k + tid * np] = Y_new_[0];
+
+				t_save = 0;
+
+				//	printf("\n%f \n", Y_new_[0]);
+
+				k++;
+			}
+
 		}
+		out_g[(tid + 1) * np - 1] = aux;
 
 	}
-	out_g[(tid + 1) * np - 1] = aux;
-
 }
 
-void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args, int tid, int N)
+void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args, int tid, int N,float ti)
 {
 
 	float* Y_old_ = new float[18];
-	int np = int(tf / dt_save);
+
 
 	float* Y_new_ = new float[18];
 
