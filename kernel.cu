@@ -956,6 +956,9 @@ int main(int argc, char** argv)
 	OptionParser::addOption("atp", "");
 	OptionParser::addOption("use_gpu", "");
 
+	OptionParser::addOption("i", "input");
+	OptionParser::addOption("o", "output");
+
 	OptionParser::parseOptions(argc, argv);
 
 
@@ -978,6 +981,12 @@ int main(int argc, char** argv)
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
 
+	
+	string i;
+	string o;
+	i= (OptionParser::foundOption("i") ? OptionParser::optionValue("i") : "m.txt").c_str();
+	o = (OptionParser::foundOption("o") ? OptionParser::optionValue("o") : "output.txt").c_str();
+	printf("input:  %s  output: %s ", i, o);
 	printf(" \n Problem: %d cells \n", N);
 
 	int TT = int(tf - ti);
@@ -989,7 +998,7 @@ int main(int argc, char** argv)
 
 
 	ifstream myfile;
-	myfile.open("m.txt");
+	myfile.open(i);
 
 
 	for (int i = 0; i < N; i++) {
@@ -999,7 +1008,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-
+	myfile.close();
 
 
 	printf(" \n Processing \n");
@@ -1047,7 +1056,7 @@ int main(int argc, char** argv)
 
 
 	fstream output;
-	output.open("out.txt", fstream::out);
+	output.open(o, fstream::out);
 
 	
 	for (int i = 0; i < N; i++) {
@@ -1061,10 +1070,9 @@ int main(int argc, char** argv)
 
 
 
-	output.close();
-
-
 	printf("\n OUTPUT FILE READY!\n");
+
+	output.close();
 
 
 	return 0;

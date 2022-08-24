@@ -19,6 +19,8 @@ import timeit
 import re
 import collections
 import os
+import six
+
 class TTCellModel:
     tf=100
     ti=0
@@ -33,13 +35,12 @@ class TTCellModel:
     
     
     @staticmethod
-    def run(P,use_gpu=False):  
-        parametersS=[TTCellModel.cofs(p) for p in P]
-        with open('m.txt','wb') as f:
-             np.savetxt(f,parametersS, fmt='%.8f')
-
-        TTCellModel.callCppmodel(np.shape(P)[0],use_gpu)
-        name="out.txt"        
+    def parseR(name="out.txt"):  
+        
+      
+              
+      
+      
         X=[]
         file = open(name, 'r')
         for row in file:
@@ -55,14 +56,60 @@ class TTCellModel:
                k={"Wf": aux[:-1] ,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vreps":aux[-10]}
            except:
              k={"Wf": aux[:-1] }
-             print("ADCALCERROR ",ads)
+            # print("ADCALCERROR ",ads)
            X.append(k)
    
         return X
+    @staticmethod 
+    def prepareinput(P,name="m.txt"):
+        parametersS=[TTCellModel.cofs(p) for p in P]
+        with open('m.txt','wb') as f:
+             np.savetxt(f,parametersS, fmt='%.8f')
+    @staticmethod
+    def run(P="",use_gpu=False, regen=True,name="out.txt"):  
         
-    def printModel(self,printresult=False):
-        print(self.parameters,TTCellModel.cofs(self.parameters))
-    
+       count=0
+       countL=0
+       output=name
+       inpt='m.txt'
+       with open(name, 'r') as f:
+             for line in f:
+                  count += 1
+                  countL=0
+                  for i in line:
+                      countL+=1
+       try:  
+            countP=0
+            with open(P, 'r') as f:
+                for line in f:
+                     countP += 1
+       except:
+            try:
+                countP=np.shape(P)[0]
+            except:
+                print("Input distribution or file not given, reusing existing results")
+                countP=count
+            
+       
+       if(count==countP and regen==False):
+            print("Using existing results at ",name) ##!!! NO GUARANTEE SIZE PARAMETERS ARE THE SAME!!!!
+       else:
+   
+            if False==isinstance(P, six.string_types): ##P is file or dist
+                print("Solving from scracth")
+                print("Generating Input file")
+                TTCellModel.prepareinput(P)
+            else:
+                print("Solving from file")
+                print("Using given input file")
+                inpt=P
+            TTCellModel.callCppmodel(countP,use_gpu,output,inpt)
+            
+            print(name, "writen and ready")
+            
+       return TTCellModel.parseR(name)
+        
+
     @staticmethod
     def setParametersOfInterest(parametersN):
         TTCellModel.parametersN=parametersN
@@ -95,10 +142,10 @@ class TTCellModel:
         TTCellModel.dt=dt
         TTCellModel.dtS=dtS
         
-    @staticmethod   #runs the model once for the given size parameters and returns the time points at wich there is evalution
+    @staticmethod   #returns the time points at wich there is evalution
     def getEvalPoints():
         
-        t=0
+        t=TTCellModel.ti
         ts=0
         ep=[]
         while(t<TTCellModel.tf):
@@ -142,41 +189,19 @@ class TTCellModel:
         return out
 
     @staticmethod
-    def callCppmodel(N,use_gpu=False,name="./kernel.o"):     
-        
+    def callCppmodel(N,use_gpu=False,outpt="out.txt",inpt="m.txt"):  
+        print("Calling solver")
+        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+        args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" --i="+inpt+" --o="+outpt  
        
-        args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" "  
         if(use_gpu):
-            args=args+"--use_gpu=1"
-        print(args)
+            args=args+" --use_gpu=1"
+     
+        
+        print("kernel call:",args,'\n')
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
         print( output.stdout.read().decode("utf-8"))
-        # matrix={}
-  
-        # try:
-        #     string = output.stdout.read().decode("utf-8")
-        #     matrix = np.matrix(string)
-        #     print(matrix)
-        
-        # except:
-        #     print(args)
-        #     print(string)
-        #     print("\n")
 
-
-
-       
-        # try: 
-        #     ads=TTCellModel.ads(matrix[:-1,1],[0.5,0.9])
-        #     return {"Wf": matrix[:-1],"dVmax":matrix[-1,1],"ADP90":ads[1],"ADP50":ads[0],"Vrepos":matrix[-2,1]}
-        # except:
-             
-        #      print(args)
-        #      print("out",string)
-        #      print(params)
-        #      return TTCellModel.callCppmodel(params)
-  
-  
 
    
     
