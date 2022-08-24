@@ -52,7 +52,7 @@ class TTCellModel:
            ads=TTCellModel.ads(aux,[0.5,0.9] )
            #print(ads)
            try:
-               k={"Wf": aux[:-1] ,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vreps":aux[-2]}
+               k={"Wf": aux[:-1] ,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vreps":aux[-5]}
            except:
              k={"Wf": aux[:-1] }
              print("ADCALCERROR ",ads)
