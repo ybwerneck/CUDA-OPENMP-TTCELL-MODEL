@@ -18,7 +18,7 @@ from scipy.spatial import KDTree as kd
 from utils import *
 
 
-def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
+def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest=False):
     #PARAMETERS
     
     #Parameters of interest X
@@ -143,37 +143,38 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
     idtoremv=np.zeros(Ns,dtype=int)-1
     svt=samplesV.T
     kdt=kd(samplesV.T)
-    for sample in samples.T:
-        t=0 # trys
-        flag=True
-        while(flag):
-             hit,ii = kdt.query(sample,k=t+1) #find the closes point, if the point is already mark to be removed, select the next closest until find a point not marked
-             if(t>=1):
-                 ii=ii[t]
-                 difs[i]=hit[t]
-             else :
-                 difs[i]=hit
-                
-             if(False==np.any(idtoremv==ii)):    
-                 flag=False
-                 break;
-             else:
-                 retrys=retrys+1
-                 t=t+1
+    if(remove_closest==True):
+        for sample in samples.T:
+            t=0 # trys
+            flag=True
+            while(flag):
+                 hit,ii = kdt.query(sample,k=t+1) #find the closes point, if the point is already mark to be removed, select the next closest until find a point not marked
+                 if(t>=1):
+                     ii=ii[t]
+                     difs[i]=hit[t]
+                 else :
+                     difs[i]=hit
+                    
+                 if(False==np.any(idtoremv==ii)):    
+                     flag=False
+                     break;
+                 else:
+                     retrys=retrys+1
+                     t=t+1
+            
+           
+            idtoremv[i]=ii
+            i=i+1    
         
-       
-        idtoremv[i]=ii
-        i=i+1    
-    
-    
-    if(normalizarX==False):
-        svt=np.delete(samplesVaux.T,idtoremv,0)
-    else:
-        svt=np.delete(svt,idtoremv,0)
         
-    for ql,dt in qoiV.items():
-        qoiV[ql]=np.delete(dt,idtoremv,0)
-        
+        if(normalizarX==False):
+            svt=np.delete(samplesVaux.T,idtoremv,0)
+        else:
+            svt=np.delete(svt,idtoremv,0)
+            
+        for ql,dt in qoiV.items():
+            qoiV[ql]=np.delete(dt,idtoremv,0)
+            
         
         
         
@@ -238,3 +239,4 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
         file.close()
     
     
+    print("Done")
