@@ -91,25 +91,25 @@ class TTCellModel:
             try:
                 countP=np.shape(P)[0]
             except:
-                print("Input distribution or file not given, reusing existing results")
+                print("  Input distribution or file not given, reusing existing results")
                 countP=count
             
        
        if(count==countP and regen==False):
-            print("Using existing results at ",name) ##!!! NO GUARANTEE SIZE PARAMETERS ARE THE SAME!!!!
+            print("  Using existing results at ",name) ##!!! NO GUARANTEE SIZE PARAMETERS ARE THE SAME!!!!
        else:
    
             if False==isinstance(P, six.string_types): ##P is file or dist
-                print("Solving from scracth")
-                print("Generating Input file")
+                print("  Solving from scracth for P(",countP,")")
+                print("  Generating Input file")
                 TTCellModel.prepareinput(P)
             else:
-                print("Solving from file")
-                print("Using given input file")
+                print("  Solving from input file ",P)
+                print("  Using given input file")
                 inpt=P
             TTCellModel.callCppmodel(countP,use_gpu,output,inpt)
             
-            print(name, "writen and ready")
+            print ("  model output ready at",name)
             
        return TTCellModel.parseR(name)
         
@@ -194,7 +194,7 @@ class TTCellModel:
 
     @staticmethod
     def callCppmodel(N,use_gpu=False,outpt="out.txt",inpt="m.txt"):  
-        print("Calling solver")
+     #   print("Calling solver")
         name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" --i="+inpt+" --o="+outpt  
        
@@ -202,9 +202,9 @@ class TTCellModel:
             args=args+" --use_gpu=1"
      
         
-        print("kernel call:",args,'\n')
+        print("   kernel call:",args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
-        print( output.stdout.read().decode("utf-8"))
+     #   print( output.stdout.read().decode("utf-8"))
 
 
    

@@ -86,18 +86,18 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
          }
     
     
-    print('Time to run Model training Set: ',stop-start)
+    print('\n Time to run Model training Set: ',stop-start)
     
     
     
     
-    
+    print("\n")
     #Run validation set
     
     start = timeit.default_timer()
     sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=True,name="vS.txt")
     stop = timeit.default_timer()
-    print('Time to run Model Validation set: ',stop-start)
+    print('\n Time to run Model Validation set: ',stop-start)
     
     ads50=[sols[i]["ADP50"] for i in range(Nv)]
     ads90=[sols[i]["ADP90"] for i in range(Nv)]
