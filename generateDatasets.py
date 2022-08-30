@@ -69,7 +69,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
     #Run training set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samples.T,use_gpu=True,regen=True,name="tS.txt")
+    sols= TTCellModel.run(samples.T,use_gpu=True,regen=False,name="tS.txt")
     stop = timeit.default_timer()
    # print(sols)
     ads50=[sols[i]["ADP50"] for i in range(Ns)]
@@ -95,10 +95,12 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
     #Run validation set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=True,name="vS.txt")
+    sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=False,name="vS.txt")
     stop = timeit.default_timer()
     print('\n Time to run Model Validation set: ',stop-start)
     
+    print("Treating Sets ")
+    start = timeit.default_timer()
     ads50=[sols[i]["ADP50"] for i in range(Nv)]
     ads90=[sols[i]["ADP90"] for i in range(Nv)]
     dVmaxs=[sols[i]["dVmax"] for i in range(Nv)]
@@ -182,11 +184,13 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False):
         print("Min DISTANCE",np.min(difs))
         print("EXACT MATCHES",np.count_nonzero(difs<=0.01)) ##0.01 tolerance
         print("Retrys",retrys)
+    
     samplesV=svt.T
     
     
     
-    
+    stop = timeit.default_timer()
+    print('\n Time to treat sets: ',stop-start)
     
     ##Write results
     
