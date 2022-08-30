@@ -72,12 +72,16 @@ class TTCellModel:
        countL=0
        output=name
        inpt='m.txt'
-       with open(name, 'r') as f:
-             for line in f:
-                  count += 1
-                  countL=0
-                  for i in line:
-                      countL+=1
+       try:
+           with open(name, 'r') as f:
+                 for line in f:
+                      count += 1
+                      countL=0
+                      for i in line:
+                          countL+=1
+       except:
+           count=0
+           
        try:  
             countP=0
             with open(P, 'r') as f:
@@ -191,7 +195,7 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False,outpt="out.txt",inpt="m.txt"):  
         print("Calling solver")
-        name="./kernel.o"
+        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" --i="+inpt+" --o="+outpt  
        
         if(use_gpu):
