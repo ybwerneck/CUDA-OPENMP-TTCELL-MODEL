@@ -257,7 +257,7 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
             p.set(xlabel="Y_true",ylabel="Y_pred")
             for ax in fig.get_axes():
                 ax.label_outer() 
-     
+            p.get_figure().savefig(folder+"results/"+qlabel+"_validation_results.png")
         
     # close the file
     f.close()
