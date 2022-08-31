@@ -31,11 +31,11 @@ def ModelPCE(exp):
     return Model
 
 
-def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
+def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False):
 
     utils.init()
-
-#Load validation files
+    print("Start Surrogate from File")
+    #Load validation files
 
     ##Reference Value for Sobol Indexes Error calculation
     
@@ -183,8 +183,9 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
             startT=timeit.default_timer()
             pols=[]
             for P in list(range(pmin,pmax+1,1)):             
-                print('\n')
-                print('D=',P)
+                if(out):
+                    print('\n')
+                    print('D=',P)
                 ind=random.sample(range(Ns), 100)
                 #generate and fit expansion            
                 start = timeit.default_timer()
@@ -192,7 +193,8 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
                 fp = cp.fit_regression (poly_exp,samples.T,dataset,model=model)  
                 stop = timeit.default_timer()
                 time=stop-start
-                print('Time to generate exp: ',time) 
+                if(out):
+                    print('Time to generate exp: ',time) 
                 gF[P-pmin]=time
              
                 #calculate loo error
@@ -200,12 +202,14 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
                 loos[P-pmin]=utils.calcula_loo(dataset,poly_exp,samples.T,model,ind)
                 stop = timeit.default_timer()
                 timeL[P-pmin]=stop-start
-                print('Time to LOO: ',timeL[P-pmin],'LOO: ',loos[P-pmin]) 
+                if(out):
+                    print('Time to LOO: ',timeL[P-pmin],'LOO: ',loos[P-pmin]) 
+                    print('\n')
     
     
                 pols.append(fp)
                 
-                print('\n')
+               
             
             stopT = timeit.default_timer()
             TT=stopT-startT
@@ -234,7 +238,8 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"}):
             
             stop = timeit.default_timer()
             time=stop-start
-            print('Time to Validate: ',time)   
+            if(out):
+                print('Time to Validate: ',time)   
             row=[qlabel,label,degreeIdx+pmin,              
             f"{nErr:.2E}",f"{loo:.2E}",maxE,avgE,Ns,timeL[degreeIdx],timeL[timeL.argmax()],gF[degreeIdx],gF[gF.argmax()],TT]
             writer.writerow(row)       
