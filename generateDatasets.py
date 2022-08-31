@@ -69,7 +69,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run training set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samples.T,use_gpu=True,regen=False,name="tS.txt")
+    sols= TTCellModel.run(samples.T,use_gpu=True,regen=True,name="tS.txt")
     stop = timeit.default_timer()
    # print(sols)
     ads50=[sols[i]["ADP50"] for i in range(Ns)]
@@ -95,17 +95,18 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run validation set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=False,name="vS.txt")
+    sols= TTCellModel.run(samplesV.T,use_gpu=False,regen=True,name="vS.txt")
     stop = timeit.default_timer()
     print('\n Time to run Model Validation set: ',stop-start)
-    
-    print("Treating Sets ")
     start = timeit.default_timer()
     ads50=[sols[i]["ADP50"] for i in range(Nv)]
     ads90=[sols[i]["ADP90"] for i in range(Nv)]
     dVmaxs=[sols[i]["dVmax"] for i in range(Nv)]
     vrest= [sols[i]["Vreps"] for i in range(Nv)]
+    stop = timeit.default_timer()
+    print('\n Time to unpack Validation set: ',stop-start)
     
+    print("Treating Sets ")
     qoiV={
          "ADP50":ads50,
          "ADP90":ads90,
@@ -117,29 +118,37 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     
     
     
-    
+    start = timeit.default_timer()
     # #NORMALIZE
-    
-    for i in range(nPar): #even if the output is a non-normalized array, a normalized array is used for treating the set
-        samples[i],samplesV[i]=normalizeTwoArrays(samples[i], samplesV[i],0,1, normalizationMethod)
-    
+  
+    if(out):    
+        print("Normalizing")
+    if(normalizarX):
+        for i in range(nPar): #even if the output is a non-normalized array, a normalized array is used for treating the set
+            samples[i],samplesV[i]=normalizeTwoArrays(samples[i], samplesV[i],0,1, normalizationMethod)
+    elif(out):
+        print("Warning: not normalizing X, for X not given in units, migth mess up closest points removal")
     if(normalizarqoi):
          for qlabel in qoi:  
             qoi[qlabel],qoiV[qlabel]=normalizeTwoArrays(qoi[qlabel],qoiV[qlabel], 0,1,normalizationMethod)
     
     
     
+
     #Treat validation set
     if(out):
-            
+        stop = timeit.default_timer()
+        print('\n Time to normalize ',stop-start)  
         print("Treating validation dataset")
         print("Removing closest points")
+        start = timeit.default_timer()
         
         
     
+    
     #REMOVE CLOSES POINT IN VALIDATION SET TO EACH POINT IN TRAINING SET
     difs,i,retrys=np.zeros(Ns),0,0
-    start = timeit.default_timer()
+    
     idtoremv=np.zeros(Ns,dtype=int)-1
     svt=samplesV.T
     kdt=kd(samplesV.T)
@@ -178,7 +187,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
         
         
         
-    if(out):
+    if(out and remove_closest==True):
             
         print("AVG DISTANCE",np.mean(difs))
         print("MAX DISTANCE",np.max(difs))
@@ -202,14 +211,14 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     except:
         if(out):
         
-            print("Updating")
+            print("Updating training set File")
     
     try:
         os.mkdir(f+"/validation")
     except:
         if(out):
         
-            print("Updating")
+            print("Updating validation set File")
     
     file=open(f+"X.csv","w", newline='') 
     writer = csv.writer(file)
