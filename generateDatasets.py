@@ -95,7 +95,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run validation set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samplesV.T,use_gpu=False,regen=True,name="vS.txt")
+    sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=True,name="vS.txt")
     stop = timeit.default_timer()
     print('\n Time to run Model Validation set: ',stop-start)
     start = timeit.default_timer()
