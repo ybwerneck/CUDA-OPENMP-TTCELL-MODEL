@@ -195,7 +195,7 @@ class TTCellModel:
     @staticmethod
     def callCppmodel(N,use_gpu=False,outpt="out.txt",inpt="m.txt"):  
      #   print("Calling solver")
-        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
+        name="./kernel.o"
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" --i="+inpt+" --o="+outpt  
        
         if(use_gpu):
@@ -204,7 +204,7 @@ class TTCellModel:
         
         print("   kernel call:",args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
-     #   print( output.stdout.read().decode("utf-8"))
+        s= ( output.stdout.read().decode("utf-8"))
 
 
    
