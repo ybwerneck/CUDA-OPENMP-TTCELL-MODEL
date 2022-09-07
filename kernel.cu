@@ -324,7 +324,7 @@ __device__ float* out_g;
 //GPU
 __device__ void  partitionedStep(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut = NULL);
 __device__ void step(float* Y_new_, int n, float* as, float* bs, float* Y_old_, float dt);
-__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut);
+__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt);
 __device__ void calc_algs_hh(float* algs, float* pars, float* Y_old_, float time)
 {
 	calc_xr1_inf = (1.0e+00 / (1.0e+00 + exp((((-2.60e+01) - V_old_) / 7.0e+00))));	//11+
@@ -542,7 +542,7 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 	K_i_old_ = args[tid + 2 * N];
 
 
-	
+
 
 
 
@@ -575,7 +575,7 @@ __device__ void initModel(float* pars, float* Y_old_, float* args)
 
 
 }
-__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt, float** strut)
+__device__ void step(float* Y_new_, float* pars, float* algs, float* rhs, float* Y_old_, float t, float dt)
 {
 
 
@@ -972,19 +972,19 @@ int main(int argc, char** argv)
 	int method_index = OptionParser::foundOption("method") ? OptionParser::parsefloat("method") : 1;
 	int model_index = 0;
 
-	float dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.1;
-	float dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
-	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 1100;
-	float ti = OptionParser::foundOption("tf") ? OptionParser::parsefloat("ti") : 1000;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 4;
-	
+	double dt = OptionParser::foundOption("dt") ? OptionParser::parsefloat("dt") : 0.01;
+	double dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
+	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 10200;
+	float ti = OptionParser::foundOption("tf") ? OptionParser::parsefloat("ti") : 10000;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 2;
+
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
 
 	int np = NP;
 	string i;
 	string o;
-	i= (OptionParser::foundOption("i") ? OptionParser::optionValue("i") : "m.txt").c_str();
+	i = (OptionParser::foundOption("i") ? OptionParser::optionValue("i") : "m.txt").c_str();
 	o = (OptionParser::foundOption("o") ? OptionParser::optionValue("o") : "output.txt").c_str();
 	printf("input:  %s  output: %s ", i, o);
 	printf(" \n Problem: %d cells \n", np);
@@ -993,7 +993,7 @@ int main(int argc, char** argv)
 	printf("\n Output timepoints per cell  = % d", TT);
 	float* paramS = (float*)malloc(sizeof(float) * 5 * N);
 	float* out;
-	out = new float [np* N * 2];
+	out = new float[np * N * 2];
 
 
 
@@ -1023,22 +1023,25 @@ int main(int argc, char** argv)
 
 
 		float* out_g;
-		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) * (np)  * N));
-		solveFixed << <N / 200, 200 >> > (out_g, dt, dt_save, tf, param_g,ti);
+		gpuErrchk(cudaMalloc((void**)&out_g, sizeof(float) * (np)*N));
+		if (N > 200)
+			solveFixed << <N / 200, 200 >> > (out_g, dt, dt_save, tf, param_g, ti);
+		else
+			solveFixed << < 2, N / 2 >> > (out_g, dt, dt_save, tf, param_g, ti);
 		gpuErrchk(cudaPeekAtLastError());
 
 		gpuErrchk(cudaDeviceSynchronize());
 
-		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * (np) * N, cudaMemcpyDeviceToHost));
+		gpuErrchk(cudaMemcpy(out, out_g, sizeof(float) * (np)*N, cudaMemcpyDeviceToHost));
 
 
 	}
 
 	else {
 		printf(" \n Solve by cpu 4 threads \n");
-#pragma omp parallel for  num_threads(30)
+#pragma omp parallel for  num_threads(10)
 		for (int z = 0; z < N; z++)
-			 solveFixedCpu(out, dt, dt_save, tf, paramS, z, N, ti);
+			solveFixedCpu(out, dt, dt_save, tf, paramS, z, N, ti);
 
 
 	}
@@ -1046,18 +1049,18 @@ int main(int argc, char** argv)
 
 
 
-	delete paramS ;
+	delete paramS;
 
 
 
 
 
-	printf(" \n Writing Results %s\n",o);
+	printf(" \n Writing Results %s\n", o);
 
-		ofstream output;
-		output.open(o);
+	ofstream output;
+	output.open(o);
 	for (int i = 0; i < N; i++) {
-		for (int j = 0; j <np; j++) {
+		for (int j = 0; j < np; j++) {
 			printf(" %f ", out[j + i * np]);
 			if (j != 0)
 				output << " ";
@@ -1066,12 +1069,12 @@ int main(int argc, char** argv)
 		output << std::endl;
 	}
 
-	delete out ;
+	delete out;
 	out = nullptr;
 	printf("\n OUTPUT FILE READY!\n");
 
 	output.close();
-	
+
 
 
 	return 0;
@@ -1091,12 +1094,7 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 
 
 
-	float** Tr = NULL;
-	if (nStates_MKM_max > 0) {
-		Tr = new float* [nStates_MKM_max];
-		for (int i = 0; i < nStates_MKM_max; ++i)
-			Tr[i] = new float[nStates_MKM_max];
-	}
+
 	// rhs will store the righ-hand-side values of NL and MK ODEs, and the coefficients a and b of the HH equations (for the RL method)
 	float rhs[nStates + nStates_HH];
 	float algs[nAlgs];
@@ -1104,42 +1102,43 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 
 
 	initModel(params, Y_old_, args);
-
 	//	cout << "[ ";
 	float aux2 = Y_old_[0];
-	float t_save = 0, aux = 0;
-	int k = 0;
+	double t_save = 0, aux = 0;
+	int k = tid * np, n = int((tf - ti) / dt);
 #pragma unroll
-	for (float t = 0; t <= tf; t += dt) {
+	int is = 0;
+	for (double t = 0; t <= tf; t += dt) {
 
 
 
-		step(Y_new_, params, algs, rhs, Y_old_, t, dt, Tr);
+		step(Y_new_, params, algs, rhs, Y_old_, t, dt);
 
 		float dv = Y_new_[0] - Y_old_[0];
 		if (dv * dv > aux * aux)
 			aux = dv;
 		for (int l = 0; l < nStates; l++) Y_old_[l] = Y_new_[l];
 
+		if (t + dt_save>= ti)
+			if (int(is) % int(n / (np - 1)) == 0)
+			{
 
-		if (t >= ti) {
-			t_save += dt;
-
-			if (t_save >= dt_save) {
-
-				out_g[k + tid * np] = Y_new_[0];
-
-				t_save = 0;
-
-				//	printf("\n%f \n", Y_new_[0]);
-
+				out_g[k] = Y_new_[0];
+			
+				printf("%f %d %d %d \n" ,t, tid, k, is);
 				k++;
 			}
+		is++;
 
-		}
-		out_g[(tid + 1) * np - 1] = aux;
+
+
 
 	}
+
+
+	out_g[k - 1] = aux;
+
+	
 }
 
 void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args, int tid, int N, float ti)
@@ -1156,12 +1155,7 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 
 
 
-	float** Tr = NULL;
-	if (nStates_MKM_max > 0) {
-		Tr = new float* [nStates_MKM_max];
-		for (int i = 0; i < nStates_MKM_max; ++i)
-			Tr[i] = new float[nStates_MKM_max];
-	}
+
 	// rhs will store the righ-hand-side values of NL and MK ODEs, and the coefficients a and b of the HH equations (for the RL method)
 	float rhs[nStates + nStates_HH];
 	float algs[nAlgs];
@@ -1171,10 +1165,11 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 	initModelC(params, Y_old_, args, tid, N);
 	//	cout << "[ ";
 	float aux2 = Y_old_[0];
-	float t_save = 0, aux = 0;
-	int k = 0;
+	double t_save = 0, aux = 0;
+	int k = tid * np, n = int((tf - ti) / dt);
 #pragma unroll
-	for (float t = 0; t <= tf; t += dt) {
+	int is = 0;
+	for (double t = 0; t <= tf; t += dt) {
 
 
 
@@ -1185,25 +1180,24 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 			aux = dv;
 		for (int l = 0; l < nStates; l++) Y_old_[l] = Y_new_[l];
 
+		if (t + dt_save>= ti)
+			if (int(is) % int(n / (np - 1)) == 0)
+			{
 
-		if (t >= ti) {
-			t_save += dt;
-
-			if (t_save >= dt_save) {
-
-				out_g[k + tid * np] = Y_new_[0];
-
-				t_save = 0;
-
-				//	printf("\n%f \n", Y_new_[0]);
-
+				out_g[k] = Y_new_[0];
+			
+				printf("%f %d %d %d \n" ,t, tid, k, is);
 				k++;
 			}
+		is++;
 
-		}
-		out_g[(tid + 1) * np - 1] = aux;
-		//	cout << " -100 " << aux << "]";
+
+
+
 	}
+
+
+	out_g[k - 1] = aux;
 }
 
 

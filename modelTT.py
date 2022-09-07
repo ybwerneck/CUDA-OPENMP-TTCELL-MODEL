@@ -50,8 +50,8 @@ class TTCellModel:
                    aux.append(float(x))
                except:
                    aux.append(-100)
-           ads=TTCellModel.ads(aux,[0.5,0.9] )
-           #print(ads)
+           ads=TTCellModel.ads(aux[:-10],[0.5,0.9],aux[-10] )
+           print("\n",aux,"===\n")
            try:
                k={"Wf": aux[:-1] ,"dVmax":aux[-1],"ADP90":ads[1],"ADP50":ads[0],"Vreps":aux[-10]}
            except:
@@ -163,7 +163,7 @@ class TTCellModel:
         return ep    
     
     @staticmethod      
-    def ads(sol,repoCofs): ##calculo da velocidade de repolarização
+    def ads(sol,repoCofs,repos): ##calculo da velocidade de repolarização
         k=0
         i=0;
         out={}
@@ -173,6 +173,8 @@ class TTCellModel:
         x=np.array(sol)
         index=0
         idxmax=0
+        print(idxmax)
+     
         for value in x:
                 
            index+=1  
@@ -182,20 +184,25 @@ class TTCellModel:
                         idxmax=index
            if(flag==1):
                         k+=1
-           if(flag==1 and repoCofs[i]*x.min() >= value):
+           if(flag==1 and repoCofs[i]*repos >= value):
                         out[i]= (k)
                         i+=1
            if(i>=len(repoCofs)):
                
                         break
-             
-   
+        print(x)
+            
+        plt.plot(x)
+        plt.axhline(y = repoCofs[0]*repos, color = 'r', linestyle = '-')
+        plt.axhline(y = repoCofs[1]*repos, color = 'r', linestyle = '-')
+        plt.show()
+         
         return out
 
     @staticmethod
     def callCppmodel(N,use_gpu=False,outpt="out.txt",inpt="m.txt"):  
      #   print("Calling solver")
-        name="./kernel.o"
+        name="C:/Faculdade/Novapasta/numeric-models/uriel-numeric/CudaRuntime/x64/Release/CudaRuntime.exe"
         args=name +" --tf="+str(TTCellModel.tf)+" --ti="+str(TTCellModel.ti)+" --dt="+str(TTCellModel.dt)+" --dt_save="+str(TTCellModel.dtS) +" --n="+str(N)+" --i="+inpt+" --o="+outpt  
        
         if(use_gpu):
@@ -204,9 +211,10 @@ class TTCellModel:
         
         print("   kernel call:",args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
-        s= ( output.stdout.read().decode("utf-8"))
+        string = output.stdout.read().decode("utf-8")
+        print(string)
 
 
-   
+
     
     
