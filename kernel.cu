@@ -986,7 +986,7 @@ int main(int argc, char** argv)
 	string o;
 	i = (OptionParser::foundOption("i") ? OptionParser::optionValue("i") : "m.txt").c_str();
 	o = (OptionParser::foundOption("o") ? OptionParser::optionValue("o") : "output.txt").c_str();
-	printf("input:  %s  output: %s ", i, o);
+	//printf("input:  %s  output: %s ", i, o);
 	printf(" \n Problem: %d cells \n", np);
 
 	int TT = int(tf - ti);
@@ -1055,7 +1055,7 @@ int main(int argc, char** argv)
 
 
 
-	printf(" \n Writing Results %s\n", o);
+	printf(" \n Writing Results \n");
 
 	ofstream output;
 	output.open(o);
@@ -1125,7 +1125,7 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 
 				out_g[k] = Y_new_[0];
 			
-				printf("%f %d %d %d \n" ,t, tid, k, is);
+			//	printf("%f %d %d %d \n" ,t, tid, k, is);
 				k++;
 			}
 		is++;
@@ -1186,7 +1186,7 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 
 				out_g[k] = Y_new_[0];
 			
-				printf("%f %d %d %d \n" ,t, tid, k, is);
+			//	printf("%f %d %d %d \n" ,t, tid, k, is);
 				k++;
 			}
 		is++;
