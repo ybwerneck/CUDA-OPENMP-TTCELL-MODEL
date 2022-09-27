@@ -23,7 +23,6 @@ import csv
 from utils import runModelParallel as runModel
 import utils
 import random
-
 #MODEL WRAPPER -> PCE MODEL
 def ModelPCE(exp):
     def Model(sample): 
@@ -31,7 +30,7 @@ def ModelPCE(exp):
     return Model
 
 
-def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False):
+def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True):
 
     utils.init()
     print("Start Surrogate from File")
@@ -41,8 +40,6 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
     
     pmin,pmax=2,4
     
-   
-
     try:
         os.mkdir(folder+"results/")
     except:
@@ -71,7 +68,7 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
     
     # create the csv writer
     writer = csv.writer(f)
-    row=['QOI',	'Method', 'Degree','Val. error',' LOOERROR','Max Sobol Error','Mean Sobol Error','Ns','Timeselected','Timemax','Timeselected G','TimemaxG','Time T']
+    row=['QOI',	'Method', 'Degree','Val. error',' LOOERROR','Ns','Timeselected','Timemax','Timeselected G','TimemaxG','Time T']
     writer.writerow(row)
     
   
@@ -105,11 +102,9 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
         Yval[qlabel]=utils.readF(folder+"validation/"+qlabel+".csv")
     
     
+    wfs=utils.readWF(folder+"validation/wfs.csv")
     
-    
-    
-    
-    
+  
     
     #Sample the parameter distribution
     
@@ -120,36 +115,44 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
     alpha=1
     eps=0.75
     kws = {"fit_intercept": False,"normalize":False}
-    models = {
+    if (models==None):
+        models = {
+        
+            
+            "OLS CP": None,
+           # "LARS": lm.Lars(**kws,eps=eps),
+           # "OLS SKT": lm.LinearRegression(**kws),
+            #"ridge"+str(alpha): lm.Ridge(alpha=alpha, **kws),
+          #  "OMP"+str(alpha):
+           # lm.OrthogonalMatchingPursuit(n_nonzero_coefs=3, **kws),
+            
+          #  "bayesian ridge": lm.BayesianRidge(**kws),
+          #  "elastic net "+str(alpha): lm.ElasticNet(alpha=alpha, **kws),
+            #"lasso"+str(alpha): lm.Lasso(alpha=alpha, **kws),
+            #"lasso lars"+str(alpha): lm.LassoLars(alpha=alpha, **kws),
+            
+            
+        
+          
+        }
     
-        
-        "OLS CP": None,
-        "LARS": lm.Lars(**kws,eps=eps),
-       # "OLS SKT": lm.LinearRegression(**kws),
-        #"ridge"+str(alpha): lm.Ridge(alpha=alpha, **kws),
-      #  "OMP"+str(alpha):
-       # lm.OrthogonalMatchingPursuit(n_nonzero_coefs=3, **kws),
-        
-        #"bayesian ridge": lm.BayesianRidge(**kws),
-        #"elastic net "+str(alpha): lm.ElasticNet(alpha=alpha, **kws),
-        #"lasso"+str(alpha): lm.Lasso(alpha=alpha, **kws),
-        #"lasso lars"+str(alpha): lm.LassoLars(alpha=alpha, **kws),
-        
-        
-    
-      
-    }
-    
+    RPC={}
+    CR={}
     ##
     pltxs=2
     pltys=0
     
     while(pltys*pltxs<len(models)):
         pltys=pltys+1
+    while(pltys*pltxs>len(models)):
+           pltxs=pltxs-1    
+    for qlabel,dataset in  Y.items() :
+       
         
-    
-    
-    for qlabel,dataset in Y.items():
+        if(sobolR!=None):
+              sobolR[qlabel]={}  
+        
+        
         print('\n',"QOI: ", qlabel,'\n')      
     ##Adpative algorithm chooses best fit in deegree range
         timeL=0
@@ -164,9 +167,12 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
                 for frame in row:
                     plotsaux.append(frame)
         except:
-            for frame in plotslot:
-                plotsaux.append(frame)
-            
+            try :
+                for frame in plotslot:
+                    plotsaux.append(frame)
+            except:
+                    plotsaux.append(plotslot)
+                
         
         for i in range(0,len(plotsaux)):
             plots.append(plotsaux.pop())
@@ -186,7 +192,10 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
                 if(out):
                     print('\n')
                     print('D=',P)
-                ind=random.sample(range(Ns), 100)
+                try:
+                    ind=random.sample(range(Ns), 100)
+                except:
+                    ind=range(Ns)
                 #generate and fit expansion            
                 start = timeit.default_timer()
                 poly_exp = cp.generate_expansion(P, dist,rule="three_terms_recurrence")
@@ -221,10 +230,9 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
             print('AA picked D= ',degreeIdx+pmin," Generate Validation Results") 
             
             ##Calculate Sobol Error
-            #s1f=np.array(sensitivity['S9'])
-            #sms=Sobol()
-            avgE=0#np.mean(abs(s1f- sms))
-            maxE=0#np.max(abs(s1f- sms)) 
+            if(sobolR!=None):
+                cp.Sens_m(fitted_polynomial, dist)
+                sobolR[qlabel][label]=cp.Sens_m(fitted_polynomial, dist),cp.Sens_t(fitted_polynomial, dist)
             
             #Caluclate Validation Error
             start = timeit.default_timer()
@@ -233,6 +241,19 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
             YPCE=np.array([YPCE[idxl] for idxl in (YPCE)]).flatten()
             YVAL=np.array(Yval[qlabel]).flatten()
             YPCE=np.array(YPCE)
+            errs=np.array(((YPCE-YVAL)**2)/np.var(YVAL))
+            RPC[qlabel]=YPCE
+    
+
+
+            crit= np.where(errs>1) 
+
+            CR[qlabel]=crit
+            for i in crit[0]:
+                print("E ",errs[i])
+                print("P ",YPCE[i],"T ",YVAL[i])
+                print("P ",YPCE[i],"T ",YVAL[i])
+            
             nErr=np.mean((YPCE-YVAL)**2)/np.var(YVAL)
             
             
@@ -241,7 +262,7 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
             if(out):
                 print('Time to Validate: ',time)   
             row=[qlabel,label,degreeIdx+pmin,              
-            f"{nErr:.2E}",f"{loo:.2E}",maxE,avgE,Ns,timeL[degreeIdx],timeL[timeL.argmax()],gF[degreeIdx],gF[gF.argmax()],TT]
+            f"{nErr:.2E}",f"{loo:.2E}",Ns,timeL[degreeIdx],timeL[timeL.argmax()],gF[degreeIdx],gF[gF.argmax()],TT]
             writer.writerow(row)       
             
             
@@ -263,6 +284,22 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax"},out=False)
             for ax in fig.get_axes():
                 ax.label_outer() 
             p.get_figure().savefig(folder+"results/"+qlabel+"_validation_results.png")
+            plt.show()
+    
+        plt.close()
+
+    # for i in CR['dVmax'][0]:
+       
+    #     print(RPC['dVmax'][i],Yval['dVmax'][i],'--',RPC['tdV'][i],Yval['tdV'][i])
+    #     color='red'
+    #     plt.plot(wfs[i],color=color)
+    #     plt.show()
         
+    # for i in range(0,np.shape(wfs)[0],int(np.shape(wfs)[0]/10)):
+    #    if(np.isin(i,CR['dVmax'][0])==False):
+    #         color='blue'
+    #         plt.plot(wfs[i],color=color)
+    # plt.show()
+       
     # close the file
     f.close()

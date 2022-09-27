@@ -18,7 +18,7 @@ from scipy.spatial import KDTree as kd
 from utils import *
 
 
-def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest=False):
+def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest=False,gpu=True):
     #PARAMETERS
     
     #Parameters of interest X
@@ -69,19 +69,21 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run training set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samples.T,use_gpu=True,regen=True,name="tS.txt")
+    sols= TTCellModel.run(samples.T,use_gpu=gpu,regen=True,name="tS.txt")
     stop = timeit.default_timer()
    # print(sols)
     ads50=[sols[i]["ADP50"] for i in range(Ns)]
     ads90=[sols[i]["ADP90"] for i in range(Ns)]
     dVmaxs=[sols[i]["dVmax"] for i in range(Ns)]
     vrest= [sols[i]["Vreps"] for i in range(Ns)]
-    
+    tdV= [sols[i]["tdV"] for i in range(Ns)]
+    wfs= [sols[i]["Wf"] for i in range (Ns)]
     qoi={
          "ADP50":ads50,
          "ADP90":ads90,
          "Vrest":vrest,
          "dVmax":dVmaxs,
+         "tdV":tdV
          
          }
     
@@ -95,7 +97,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run validation set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samplesV.T,use_gpu=True,regen=True,name="vS.txt")
+    sols= TTCellModel.run(samplesV.T,use_gpu=gpu,regen=True,name="vS.txt")
     stop = timeit.default_timer()
     print('\n Time to run Model Validation set: ',stop-start)
     start = timeit.default_timer()
@@ -103,6 +105,8 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     ads90=[sols[i]["ADP90"] for i in range(Nv)]
     dVmaxs=[sols[i]["dVmax"] for i in range(Nv)]
     vrest= [sols[i]["Vreps"] for i in range(Nv)]
+    tdV= [sols[i]["tdV"] for i in range(Nv)]
+    wfsV= [sols[i]["Wf"] for i in range (Nv)]
     stop = timeit.default_timer()
     print('\n Time to unpack Validation set: ',stop-start)
     
@@ -112,7 +116,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
          "ADP90":ads90,
          "Vrest":vrest,
          "dVmax":dVmaxs,
-         
+         "tdV":tdV
          }
     
     
@@ -247,5 +251,13 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
         np.savetxt(file,Yval, fmt='%.8f')
         file.close()
     
+    Y=wfs
+    Yval=wfsV
+    file=open(f+"/wf.csv","w", newline='')
+    np.savetxt(file,Y, fmt='%.8f')
+    file.close()
+    file=open(f+"/validation/wfs.csv","w", newline='')
+    np.savetxt(file,Yval, fmt='%.8f')
+    file.close() 
     
     print("Done")
