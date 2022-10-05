@@ -689,7 +689,7 @@ int main(int argc, char** argv)
 	double dt_save = OptionParser::foundOption("dt_save") ? OptionParser::parsefloat("dt_save") : 1;
 	float tf = OptionParser::foundOption("tf") ? OptionParser::parsefloat("tf") : 10200;
 	float ti = OptionParser::foundOption("tf") ? OptionParser::parsefloat("ti") : 10000;
-	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 2;
+	int N = OptionParser::foundOption("n") ? OptionParser::parseInt("n") : 10;
 
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
@@ -751,7 +751,7 @@ int main(int argc, char** argv)
 	}
 
 	else {
-		printf(" \n Solve by cpu 4 threads \n");
+		printf(" \n Solve by cpu 10 threads \n");
 #pragma omp parallel for  num_threads(10)
 		for (int z = 0; z < N; z++)
 			solveFixedCpu(out, dt, dt_save, tf, paramS, z, N, ti);
@@ -829,9 +829,9 @@ __global__ void solveFixed(float* out_g, float dt, float dt_save, float tf, floa
 		step(Y_new_, params, algs, rhs, Y_old_, t, dt);
 
 		float dv = Y_new_[0] - Y_old_[0];
-		if (dv > aux) {
+		if (t >= ti && dv > aux) {
 			aux = dv;
-			aux2 = t;
+			aux2 = t-ti;
 		}
 		for (int l = 0; l < nStates; l++) Y_old_[l] = Y_new_[l];
 
@@ -894,9 +894,9 @@ void solveFixedCpu(float* out_g, float dt, float dt_save, float tf, float* args,
 		step(Y_new_, params, algs, rhs, Y_old_, t, dt);
 
 		float dv = Y_new_[0] - Y_old_[0];
-		if (dv > aux) {
+		if (t>=ti && dv > aux) {
 			aux = dv;
-			aux2 = t;
+			aux2 = t-ti;
 		}
 		for (int l = 0; l < nStates; l++) Y_old_[l] = Y_new_[l];
 
