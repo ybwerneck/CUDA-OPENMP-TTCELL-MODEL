@@ -10,7 +10,8 @@ from SALib.sample import saltelli
 from SALib.analyze import sobol
 from sklearn.preprocessing import normalize as normalizeSkt
 import ray
-
+from scipy.spatial import KDTree as kd
+from copy import copy as copy
 PROCESSN=5
 
 def init():
@@ -72,6 +73,14 @@ def readF(fn):
     return X
 
 
+def readWF(fn):
+    X=[]
+    file = open(fn, 'r')
+    for row in file:
+        k=[float(x) for x in row.split(' ')]
+        
+        X.append(k)
+    return X
 
       
 @ray.remote
@@ -147,9 +156,8 @@ def calcula_loo(y, poly_exp, samples,model,I=-1):
     err = np.mean(deltas)/np.var(y)
     acc = 1.0 - np.mean(deltas)/np.var(y)
     return err
-  
 @ray.remote
-def runModel(samples,nsamp,model):
+def runModelO(samples,nsamp,model):
     
    R={}
   
@@ -157,6 +165,32 @@ def runModel(samples,nsamp,model):
    for i in range(nsamp):
         R[i]= model(samples[i])
   
+   return R
+   
+
+def runModelParallelO(samples,model):
+      nsamp = np.shape(samples)[1]
+      blocksize=int(nsamp/PROCESSN)
+      treads={};
+      
+      Y={}
+      k=0
+      for i in range(PROCESSN):
+          treads[i]=runModelO.remote(samples.T[blocksize*i:blocksize*(i+1)],int(nsamp/PROCESSN),model)
+      for x in range(PROCESSN): 
+          blocSols=ray.get(treads[x])
+          for s in range(blocksize) :
+              Y[k]=blocSols[s]
+              k=k+1
+      return Y  
+@ray.remote
+def runModel(samples,nsamp,model):
+    
+   R={}
+  
+   R=model(samples)
+   
+   
    return R
    
 
@@ -171,7 +205,7 @@ def runModelParallel(samples,model):
           treads[i]=runModel.remote(samples.T[blocksize*i:blocksize*(i+1)],int(nsamp/PROCESSN),model)
       for x in range(PROCESSN): 
           blocSols=ray.get(treads[x])
-          for s in range(blocksize) :
+          for s in range(blocksize):
               Y[k]=blocSols[s]
               k=k+1
       return Y
@@ -213,3 +247,81 @@ def getRefSobol():
     sensitivity['SVR']=[7.48449580e-01,3.65262866e-03, 2.01777153e-03 ,4.39363109e-04,
      1.82630159e-05, 2.43027627e-01]
     return sensitivity
+
+def readSet(folder,Ns,nPar,qoi):
+    #Load datasets
+    
+    #Training Samples
+    X=readF(folder+"X.csv")
+    samples=np.zeros((len(X),nPar))
+    for i,sample in enumerate(X):       ##must be matrix not list
+        for k,y in enumerate(sample):
+            samples[i][k]=y
+            
+    Y={}
+    for qlabel in qoi:
+        Y[qlabel]=readF(folder+qlabel+".csv")
+    
+    
+    
+    #Validation Samples
+    
+    Xv=readF(folder+"validation/"+"X.csv")
+    samplesVal=np.zeros((len(Xv),nPar))
+    for i,sample in enumerate(Xv):       ##must be matrix not list
+        for k,y in enumerate(sample):
+            samplesVal[i][k]=y
+    
+    Yval={}
+    for qlabel in qoi:
+        Yval[qlabel]=readF(folder+"validation/"+qlabel+".csv")
+    
+    
+    wfs=readWF(folder+"validation/wfs.csv")
+    
+    return samples,Y,samplesVal,Yval
+    
+def drawSubset(Set,n,samples):
+    x,y,xv,yv=Set
+    
+    
+    #REMOVE CLOSES POINT IN VALIDATION SET TO EACH POINT IN TRAINING SET
+    difs,i,retrys=np.zeros(n+1),0,0
+    
+    idselec=np.zeros(n,dtype=int)-1
+    
+    kdt=kd(x)
+
+    for sample in samples.T:
+            t=0 # trys
+            flag=True
+            while(flag):
+                 hit,ii = kdt.query(sample,k=t+1) #find the closes point, if the point is already mark to be removed, select the next closest until find a point not marked
+                 if(t>=1):
+                     ii=ii[t]
+                     difs[i]=hit[t]
+                 else :
+                     difs[i]=hit
+                    
+                 if(False==np.any(idselec==ii)):    
+                     flag=False
+                     break;
+                 else:
+                     retrys=retrys+1
+                     t=t+1
+            
+           
+            idselec[i]=ii
+            i=i+1    
+        
+    
+    yaux=copy(y)
+    for qoi,data in y.items():
+        yaux[qoi]=np.array(y[qoi])[idselec]
+
+    
+   
+    return x[idselec],yaux,xv,yv
+ 
+    return 
+    

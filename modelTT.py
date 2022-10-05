@@ -211,8 +211,18 @@ class TTCellModel:
       
 
 
+    @staticmethod
+    def getDist():
+            
+        hypox=cp.Uniform(0,1.25)
+        hyper=cp.Uniform(0,1.25)    
+        acid=cp.Uniform(0,1.25) 
+        dist = cp.J(hypox,hyper,acid)
+        return dist
 
-         
+    @staticmethod
+    def getNPar():
+        return 3
 
 
     

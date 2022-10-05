@@ -20,7 +20,7 @@ import chaospy as cp
 import timeit
 from sklearn import linear_model as lm
 import csv
-from utils import runModelParallel as runModel
+from utils import runModelParallelO as runModel
 import utils
 import random
 #MODEL WRAPPER -> PCE MODEL
@@ -32,7 +32,7 @@ def ModelPCE(exp):
 
 def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True):
 
-    utils.init()
+  
     print("Start Surrogate from File")
     #Load validation files
 
@@ -93,7 +93,7 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
     
     Xv=utils.readF(folder+"validation/"+"X.csv")
     samplesVal=np.zeros((len(Xv),6))
-    for i,sample in enumerate(X):       ##must be matrix not list
+    for i,sample in enumerate(Xv):       ##must be matrix not list
         for k,y in enumerate(sample):
             samplesVal[i][k]=y
     
@@ -246,13 +246,13 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
     
 
 
-            crit= np.where(errs>1) 
+            crit= np.where(errs>0.5) 
 
             CR[qlabel]=crit
-            for i in crit[0]:
-                print("E ",errs[i])
-                print("P ",YPCE[i],"T ",YVAL[i])
-                print("P ",YPCE[i],"T ",YVAL[i])
+            # for i in crit[0]:
+            #     print("E ",errs[i])
+            #     print("P ",YPCE[i],"T ",YVAL[i])
+            #     print("P ",YPCE[i],"T ",YVAL[i])
             
             nErr=np.mean((YPCE-YVAL)**2)/np.var(YVAL)
             
@@ -288,18 +288,18 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
     
         plt.close()
 
-    # for i in CR['dVmax'][0]:
+    for i in CR['dVmax'][0]:
        
-    #     print(RPC['dVmax'][i],Yval['dVmax'][i],'--',RPC['tdV'][i],Yval['tdV'][i])
-    #     color='red'
-    #     plt.plot(wfs[i],color=color)
-    #     plt.show()
+        print(RPC['dVmax'][i],Yval['dVmax'][i],'--',RPC['tdV'][i],Yval['tdV'][i])
+        color='red'
+        plt.plot(wfs[i],color=color)
+        plt.show()
         
-    # for i in range(0,np.shape(wfs)[0],int(np.shape(wfs)[0]/10)):
-    #    if(np.isin(i,CR['dVmax'][0])==False):
-    #         color='blue'
-    #         plt.plot(wfs[i],color=color)
-    # plt.show()
+    for i in range(0,np.shape(wfs)[0],int(np.shape(wfs)[0]/10)):
+        if(np.isin(i,CR['dVmax'][0])==False):
+            color='blue'
+            plt.plot(wfs[i],color=color)
+    plt.show()
        
     # close the file
     f.close()

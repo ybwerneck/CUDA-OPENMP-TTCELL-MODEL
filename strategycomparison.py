@@ -28,13 +28,11 @@ import csv
 from utils import runModelParallel as runModel
 import utils
 from functools import partial
+from scipy.spatial import KDTree as kd
 
 import random
-#MODEL WRAPPER -> PCE MODEL
-def ModelPCE(exp):
-    def Model(sample): 
-        return cp.call(exp,sample)
-    return Model
+
+
 
 
 def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True):
@@ -114,79 +112,219 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
     
   
     
-    #Sample the parameter distribution
-         
+  
           
        
        
        
-    print('\n',"QOI: ", qlabel,'\n')      
-   ##Adpative algorithm chooses best fit in deegree range
-    timeL=0
-    a,b=2,2   
-    fig,plotslot=plt.subplots(a,b)
-    plotsaux=[]
-    plots=[]
-       
-       
-    try:
-           for row in plotslot:
-               for frame in row:
-                   plotsaux.append(frame)
-    except:
-           try :
-               for frame in plotslot:
-                   plotsaux.append(frame)
-           except:
-                   plotsaux.append(plotslot)
 
-    
-    def GPModel(x,y,dist):
-        
-        def model (gpr,X):
-            return gpr.predict(np.array(X),return_std=False)
-        gpr=GaussianProcessRegressor(
-        random_state=0)
-        gpr.fit(X, y)
-        return partial(model,gpr)
-        
-    def PCEModel(x,y,dist,P=2,regressor=None) :
-        def model(pce,X):
-            return cp.call(pce,X)
-        poly_exp = cp.generate_expansion(P, dist,rule="three_terms_recurrence")
-        fp = cp.fit_regression (poly_exp,x.T,y,model=regressor)  
-        return partial(model,fp)
-        
-    models={
-        
-       # "GP":GPModel,
-        "PCE":partial(PCEModel,P=2,regressor=None)
-        
-        }
+       
+
+
+   
         
     
     for mlabel,model in models.items():
+        print('\n',"Model: ", mlabel,'\n')      
+       ##Adpative algorithm chooses best fit in deegree range
+        timeL=0
+        a,b=2,2   
+        
+    
+        
+        fig,plotslot=plt.subplots(a,b)
+        plotsaux=[]
+        plots=[]
+        
+        try:
+               for row in plotslot:
+                   for frame in row:
+                       plotsaux.append(frame)
+        except:
+               try :
+                   for frame in plotslot:
+                       plotsaux.append(frame)
+               except:
+                       plotsaux.append(plotslot)
+
+           
         for i in range(0,len(plotsaux)):
             plots.append(plotsaux.pop())
         pltidx=0
         fig.suptitle(mlabel)   
+        
+        
+        crit={}
+        Ypred={}
         for label in qoi:
+            
+            ##prepare input
             y = np.array(Y[label]).flatten()
             yv=np.array(Yval[label]).flatten()
             
-          
+            ##fit model
             predictor=model(np.array(X),y,dist)
        
-            ypred=runModel(np.array(Xv),predictor)     
+        
+            ##validate model
+            ypred=runModel(np.array(Xv).T,predictor)     
             ypred=np.array([ypred[i] for i in ypred])
             
+            errs=np.array(((ypred-yv)**2)/np.var(yv))
+    
+
+            ##store results
+            crit[label]= np.where(errs>0.01) 
+            Ypred[label]=ypred
             
             
+            ##plot qoi
             p=plots.pop()   
             p.scatter(yv,ypred)
             p.set_title(label)           
             p.plot(yv,yv,"black",linewidth=2)
             p.set(xlabel="Y_true",ylabel="Y_pred")
+            for ax in fig.get_axes():
+                ax.label_outer() 
+            p.get_figure().savefig(folder+"results/"+mlabel+"_validation_results.png")
+        plt.show()
+        
+        
+        
+        ##post-process analasys of results
+        for i in crit['dVmax'][0]:
+                 
+                    print(Ypred['dVmax'][i],Yval['dVmax'][i],'--',Ypred['tdV'][i],Yval['tdV'][i])
+                    color='red'
+                    plt.plot(wfs[i],color=color)
+                    plt.show()
+                    
+        for i in range(0,np.shape(wfs)[0],int(np.shape(wfs)[0]/10)):
+                    if(np.isin(i,crit['dVmax'][0])==False):
+                        color='blue'
+                        plt.plot(wfs[i],color=color)
+        plt.show()
+                      
+
+def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True,plot=True):
+
+   
+    #Load validation files
+
+    ##Reference Value for Sobol Indexes Error calculation
+    
+    try:
+        os.mkdir(folder+"results/")
+    except:
+        print("")
+        
+        
+        
+    #Parameters of interest X
+
+
+
+
+    hypoxd=cp.Uniform(0,1.25)
+    hyperd=cp.Uniform(0,1.25)
+    acid=cp.Uniform(0,1.25)
+    
+    dist = cp.J(hypoxd,hyperd,acid)
+    
+    
+    ##Load Result File 
+    f = open(folder+'results/numeric.csv', 'a',newline='')
+    updt=os.path.exists('numeric.csv')
+    
+    
+    # create the csv writer
+    writer = csv.writer(f)
+    row=['QOI',	'Method', 'Degree','Val. error',' LOOERROR','Ns','Timeselected','Timemax','Timeselected G','TimemaxG','Time T']
+    writer.writerow(row)
+    
+  
+    #Load datasets
+    
+    #Training Samples
+    nPar=6
+    
+
+
+        
+
+    erros={}
+    for ml,a in models.items():
+        erros[ml]=0
+    
+    for mlabel,model in models.items():
+        print('\n',"Model: ", mlabel,'\n')      
+       ##Adpative algorithm chooses best fit in deegree range
+        timeL=0
+        a,b=2,2   
+        
+    
+        if(plot!=False):
+            fig,plotslot=plt.subplots(a,b)
+            plotsaux=[]
+            plots=[]
+            
+            try:
+                   for row in plotslot:
+                       for frame in row:
+                           plotsaux.append(frame)
+            except:
+                   try :
+                       for frame in plotslot:
+                           plotsaux.append(frame)
+                   except:
+                           plotsaux.append(plotslot)
+    
+               
+            for i in range(0,len(plotsaux)):
+                plots.append(plotsaux.pop())
+            pltidx=0
+            fig.suptitle(mlabel+" "+str(Ns))   
+       
+        crit={}
+        Ypred={}
+        for label in qoi:
+            
+            ##prepare input
+            y = np.array(Y[label]).flatten()
+            yv=np.array(Yval[label]).flatten()
+            
+            ##fit model
+            predictor=model(np.array(X).T,y,dist)
+       
+        
+            ##validate model
+            ypred=runModel(np.array(Xval),predictor)     
+            ypred=np.array([ypred[i] for i in ypred])
+            
+            errs=np.array(((ypred-yv)**2)/np.var(yv))
+            erros[mlabel]=erros[mlabel]+(1/4)*errs
+
+            ##store results
+            crit[label]= np.where(errs>0.1) 
+            Ypred[label]=ypred
             
             
-import runSet
+            ##plot qoi
+            if(plot==False):
+                continue
+            p=plots.pop()   
+            p.scatter(yv,ypred)
+            p.set_title(label)           
+            p.plot(yv,yv,"black",linewidth=2)
+            p.set(xlabel="Y_true",ylabel="Y_pred")
+            for ax in fig.get_axes():
+                ax.label_outer() 
+            p.get_figure().savefig(folder+"results/"+mlabel+"_validation_results.png")
+        plt.show()
+        
+        
+        
+   
+        plt.show()
+                              
+    return erros

@@ -9,7 +9,7 @@ import os
 import numpy as np
 import chaospy as cp
 import timeit
-from modelTT import TTCellModel
+
 import math
 import csv
 import ray
@@ -18,7 +18,7 @@ from scipy.spatial import KDTree as kd
 from utils import *
 
 
-def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest=False,gpu=True):
+def generateDataset(dist,folder,Ns,Nv,model,out=False,nx=False,ny=False,remove_closest=False,gpu=True):
     #PARAMETERS
     
     #Parameters of interest X
@@ -52,7 +52,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Sample the parameter distributio
     start = timeit.default_timer()
     samples = dist.sample(Ns,rule="latin_hypercube")
-    samplesaux=copy.copy(samples)
+    samplesaux=copy(samples)
     stop = timeit.default_timer()
     if(out):        
        print('Time to sample Dist: ',stop-start)
@@ -60,7 +60,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     
     start = timeit.default_timer()
     samplesV = dist.sample(Nv ,rule="latin_hypercube")
-    samplesVaux=copy.copy(samplesV)
+    samplesVaux=copy(samplesV)
     stop = timeit.default_timer()
     if(out):
         print('Time to sample Dist V: ',stop-start)
@@ -69,7 +69,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run training set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samples.T,use_gpu=gpu,regen=True,name="tS.txt")
+    sols= model.run(samples.T,use_gpu=gpu,regen=True,name="tS.txt")
     stop = timeit.default_timer()
    # print(sols)
     ads50=[sols[i]["ADP50"] for i in range(Ns)]
@@ -97,7 +97,7 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     #Run validation set
     
     start = timeit.default_timer()
-    sols= TTCellModel.run(samplesV.T,use_gpu=gpu,regen=True,name="vS.txt")
+    sols= model.run(samplesV.T,use_gpu=gpu,regen=True,name="vS.txt")
     stop = timeit.default_timer()
     print('\n Time to run Model Validation set: ',stop-start)
     start = timeit.default_timer()
@@ -260,4 +260,5 @@ def generateDataset(dist,folder,Ns,Nv,out=False,nx=False,ny=False,remove_closest
     np.savetxt(file,Yval, fmt='%.8f')
     file.close() 
     
+    return samples,qoi,samplesV,qoiV
     print("Done")
