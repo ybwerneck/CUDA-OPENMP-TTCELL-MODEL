@@ -207,7 +207,7 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
         plt.show()
                       
 
-def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True,plot=True):
+def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True,plot=True):
 
    
     #Load validation files
@@ -290,7 +290,7 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dV
             ##fit model
             start = timeit.default_timer()
             
-            predictor=model(np.array(X).T,y,dist)
+            predictor=model(np.array(X).T,y)
        
             stop = timeit.default_timer()
             timefitting=stop-start
