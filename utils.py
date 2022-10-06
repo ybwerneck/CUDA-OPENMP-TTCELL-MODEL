@@ -12,6 +12,7 @@ from sklearn.preprocessing import normalize as normalizeSkt
 import ray
 from scipy.spatial import KDTree as kd
 from copy import copy as copy
+import timeit
 PROCESSN=5
 
 def init():
@@ -183,6 +184,22 @@ def runModelParallelO(samples,model):
               Y[k]=blocSols[s]
               k=k+1
       return Y  
+  
+    
+def measureModelPerfomance(dist, model):
+    
+    samp=dist.sample(100)
+    time=0
+
+    for i in range(10):
+        samp=dist.sample(10)
+        start= timeit.default_timer()
+        model(samp.T)
+        stop = timeit.default_timer()
+        t=stop-start
+        time= time + t/5
+    
+    return time
 @ray.remote
 def runModel(samples,nsamp,model):
     

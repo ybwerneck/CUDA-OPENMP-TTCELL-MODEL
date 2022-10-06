@@ -26,6 +26,7 @@ import timeit
 from sklearn import linear_model as lm
 import csv
 from utils import runModelParallel as runModel
+from utils import measureModelPerfomance as measureModel
 import utils
 from functools import partial
 from scipy.spatial import KDTree as kd
@@ -220,17 +221,8 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dV
         
         
         
-    #Parameters of interest X
 
 
-
-
-    hypoxd=cp.Uniform(0,1.25)
-    hyperd=cp.Uniform(0,1.25)
-    acid=cp.Uniform(0,1.25)
-    
-    dist = cp.J(hypoxd,hyperd,acid)
-    
     
     ##Load Result File 
     f = open(folder+'results/numeric.csv', 'a',newline='')
@@ -253,9 +245,11 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dV
         
 
     erros={}
+    timesamp={}
+    timefit={}
     for ml,a in models.items():
-        erros[ml]=0
-    
+        
+        timefit[ml],timesamp[ml],erros[ml]=0,0,0
     for mlabel,model in models.items():
         print('\n',"Model: ", mlabel,'\n')      
        ##Adpative algorithm chooses best fit in deegree range
@@ -294,16 +288,29 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dV
             yv=np.array(Yval[label]).flatten()
             
             ##fit model
+            start = timeit.default_timer()
+            
             predictor=model(np.array(X).T,y,dist)
        
-        
+            stop = timeit.default_timer()
+            timefitting=stop-start
+            print(label)
+            print("Time to fit",timefitting)
+            timesample=measureModel(dist, predictor)
+            
+            print("Time to sample 10x resulting emulator",timesample)
+            print("\n")
             ##validate model
             ypred=runModel(np.array(Xval),predictor)     
             ypred=np.array([ypred[i] for i in ypred])
             
             errs=np.array(((ypred-yv)**2)/np.var(yv))
-            erros[mlabel]=erros[mlabel]+(1/4)*errs
-
+            
+            
+            erros[mlabel]=erros[mlabel]+(1/4)*np.mean(errs)
+            timefit[mlabel]=timefit[mlabel] + 1/4* timefitting
+            timesamp[mlabel]=timesamp[mlabel]+1/4 *timesample
+            
             ##store results
             crit[label]= np.where(errs>0.1) 
             Ypred[label]=ypred
@@ -327,4 +334,4 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,folder="",qoi={"ADP50","ADP90","Vrest","dV
    
         plt.show()
                               
-    return erros
+    return erros,timefit,timesamp
