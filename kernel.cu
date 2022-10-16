@@ -520,14 +520,12 @@ __device__ __host__ void initModel(float* pars, float* Y_old_, float* args, int 
 	Na_o = 1.40e+02;
 	P_kna = 3.0e-02;
 	Ca_o = 2.0e+00;
-	g_K1 = 5.4050e+00;
-	g_Kr = 0.096; //0.134
-	g_Ks = 0.245; //0.270
+
 	g_Na = 1.48380e+01;
 	g_bna = 2.90e-04;
 	g_CaL = 1.750e-04;
 	g_bca = 5.920e-04;
-	g_to = 2.940e-01;
+	
 	P_NaK = 1.3620e+00;
 	K_mk = 1.0e+00;
 	K_mNa = 4.0e+01;
@@ -557,12 +555,17 @@ __device__ __host__ void initModel(float* pars, float* Y_old_, float* args, int 
 
 
 
+
+
 	g_Na = args[tid];
-	g_CaL = args[tid + N];
-	
+	g_CaL = args[tid +1 * N];	
+	K_i_old_ = args[tid + 2 * N];
 	K_o = args[tid + 3 * N];
 	atp = args[tid + 4 * N];
-
+	g_K1 = args[tid + 5 * N];
+	g_Kr = args[tid + 6 * N]; 
+	g_Ks = args[tid + 7 * N];; 
+	g_to = args[tid + 8 * N];;
 
 
 	g_pCa = 1 / (1 + pow((1.4/ atp), 2.6));
@@ -588,7 +591,7 @@ __device__ __host__ void initModel(float* pars, float* Y_old_, float* args, int 
 	Ca_i_old_ = 0.00008;//2.0e-04;
 	Ca_SR_old_ = 0.56;//2.0e-01;
 	Na_i_old_ = 11.6;//1.160e+01;
-	K_i_old_ = args[tid + 2 * N];
+
 
 	
 
@@ -693,7 +696,7 @@ int main(int argc, char** argv)
 
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
-
+	const int NPAR = 9;
 	int np = NP;
 	string i;
 	string o;
@@ -704,7 +707,7 @@ int main(int argc, char** argv)
 
 	int TT = int(tf - ti);
 	printf("\n Output timepoints per cell  = % d", TT);
-	float* paramS = (float*)malloc(sizeof(float) * 5 * N);
+	float* paramS = (float*)malloc(sizeof(float) * NPAR * N);
 	float* out;
 	out = new float[np * N * 2];
 
@@ -713,10 +716,11 @@ int main(int argc, char** argv)
 	ifstream myfile;
 	myfile.open(i);
 
-
 	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < 5; j++) {
+		for (int j = 0; j < NPAR; j++) {
+			
 			myfile >> paramS[i + j * N];
+		
 
 		}
 	}
@@ -730,8 +734,8 @@ int main(int argc, char** argv)
 
 		printf(" \n Solve by gpu Grid: %dx%d threads \n", N / 200, 200);
 		float* param_g;
-		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float) * 5 * N));
-		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * 5 * N, cudaMemcpyHostToDevice));
+		gpuErrchk(cudaMalloc((void**)&param_g, sizeof(float) * NPAR * N));
+		gpuErrchk(cudaMemcpy(param_g, paramS, sizeof(float) * NPAR * N, cudaMemcpyHostToDevice));
 
 
 

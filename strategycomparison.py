@@ -281,6 +281,10 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
        
         crit={}
         Ypred={}
+        
+        erros[mlabel]={}
+        timefit[mlabel]={}
+        timesamp[mlabel]={}
         for label in qoi:
             
             ##prepare input
@@ -307,9 +311,9 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
             errs=np.array(((ypred-yv)**2)/np.var(yv))
             
             
-            erros[mlabel]=erros[mlabel]+(1/4)*np.mean(errs)
-            timefit[mlabel]=timefit[mlabel] + 1/4* timefitting
-            timesamp[mlabel]=timesamp[mlabel]+1/4 *timesample
+            erros[mlabel][label]=np.mean(errs)
+            timefit[mlabel][label]=timefitting
+            timesamp[mlabel][label]=timesample
             
             ##store results
             crit[label]= np.where(errs>0.1) 

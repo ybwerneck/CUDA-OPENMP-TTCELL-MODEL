@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Sat Oct 15 22:22:48 2022
+
+@author: yanbw
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Oct  5 16:43:30 2022
 
 @author: yanbw
@@ -29,7 +36,7 @@ import os
 import six
 from modelTT import TTCellModel
 
-class TTCellModelExt(TTCellModel):
+class TTCellModelChannel(TTCellModel):
    
 
    
@@ -47,10 +54,10 @@ class TTCellModelExt(TTCellModel):
                
                TTCellModel.atp_default - 3 * ps[0], ##Atp
                
-               TTCellModel.g_K1_defaults, 
-               TTCellModel.g_Kr_defaults, 
-               TTCellModel.g_Ks_defaults,                
-               TTCellModel.g_to_defaults,
+               TTCellModel.g_K1_defaults *(1 -  ps[5] * 0.4), 
+               TTCellModel.g_Kr_defaults *(1 -  ps[6] * 0.7), 
+               TTCellModel.g_Ks_defaults *(1  -  ps[6] * 0.8) ,                
+               TTCellModel.g_to_defaults (1  -  ps[6] )  ,
                
                 
          ]
@@ -68,11 +75,16 @@ class TTCellModelExt(TTCellModel):
         ki=cp.Uniform(0,1.25) 
         ko=cp.Uniform(0,1.25)    
         atp=cp.Uniform(0,1.25) 
-        dist = cp.J(gna,gcal,ki,ko,atp)
+        
+        gk1=cp.Uniform(0,1.25)    
+        gkr=cp.Uniform(0,1.25) 
+        gks=cp.Uniform(0,1.25)    
+        gto=cp.Uniform(0,1.25) 
+        dist = cp.J(gna,gcal,ki,ko,atp,gk1,gkr,gks,gto)
         return dist
 
 
     @staticmethod
     def getNPar():
-        return 5
+        return 9
          

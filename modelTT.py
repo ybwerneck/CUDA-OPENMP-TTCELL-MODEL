@@ -27,13 +27,18 @@ class TTCellModel:
     dt=0.1
     dtS=1
     parametersN=["ki","ko","gna","gca","atp"]
+    
     K_o_default=5.40e+00
     g_CaL_default=1.750e-04
     g_Na_default=1.48380e+01
     K_i_default=138.3
-    atp_default=2.6
-    
-    
+    atp_default=5.6
+    g_K1_defaults=5.4050e+00
+    g_Kr_defaults=0.096
+    g_Ks_defaults=0.245
+    g_to_defaults=2.940e-01
+
+
     @staticmethod
     def parseR(name="out.txt"):  
         
@@ -124,12 +129,22 @@ class TTCellModel:
     def cofs(ps):
 
         params=[
-             (1-0.25*ps[2])*TTCellModel.g_Na_default,
-            (1-0.25*ps[2])*TTCellModel.g_CaL_default,
+           (1-0.25*ps[2])*TTCellModel.g_Na_default,
+           
+           (1-0.25*ps[2])*TTCellModel.g_CaL_default,
             
-             138.3 - 13.3*ps[2],
-            5.4 + 4.6*ps[1],
-            5.6 - 3 * ps[0]          
+           TTCellModel.K_i_default - 13.3*ps[2],
+           
+           TTCellModel.K_o_default + 4.6*ps[1],
+           
+           TTCellModel.atp_default - 3 * ps[0], ##Atp
+           
+           TTCellModel.g_K1_defaults, 
+           TTCellModel.g_Kr_defaults, 
+           TTCellModel.g_Ks_defaults,
+            
+           TTCellModel.g_to_defaults,
+           
             
             ]
      
@@ -205,7 +220,7 @@ class TTCellModel:
             args=args+" --use_gpu=1"
      
         
-        print("   kernel call:",args)
+        #print("   kernel call:",args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
         string = output.stdout.read().decode("utf-8")
       
