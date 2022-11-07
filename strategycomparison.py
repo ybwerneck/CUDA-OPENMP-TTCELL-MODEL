@@ -35,7 +35,6 @@ import random
 
 
 
-
 def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True):
 
     utils.init()
@@ -222,7 +221,7 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
         
         
 
-
+    
     
     ##Load Result File 
     f = open(folder+'results/numeric.csv', 'a',newline='')
@@ -245,8 +244,13 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
         
 
     erros={}
+    errosR={}
+    errosMax={}
     timesamp={}
     timefit={}
+    
+    SAMPREF=utils.storeGmem(np.array(Xval).T)
+    NSAMP=np.shape(np.array(Xval))[1]
     for ml,a in models.items():
         
         timefit[ml],timesamp[ml],erros[ml]=0,0,0
@@ -283,6 +287,8 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
         Ypred={}
         
         erros[mlabel]={}
+        errosR[mlabel]={}
+        errosMax[mlabel]={}
         timefit[mlabel]={}
         timesamp[mlabel]={}
         for label in qoi:
@@ -305,15 +311,21 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
             print("Time to sample 10x resulting emulator",timesample)
             print("\n")
             ##validate model
-            ypred=runModel(np.array(Xval),predictor)     
+            
+            ypred=runModel(SAMPREF,predictor,NSAMP)     
             ypred=np.array([ypred[i] for i in ypred])
             
-            errs=np.array(((ypred-yv)**2)/np.var(yv))
+            errs=np.array(((ypred-yv)**2)**(1/2))
             
             
+           
+            errosMax[mlabel][label]=np.max(errs)/((yv[errs.argmax()]**2)**(1/2))
+            errosR[mlabel][label]=np.mean((errs)/((yv**2)**(1/2)))
+            errs=errs/np.var(yv)
             erros[mlabel][label]=np.mean(errs)
             timefit[mlabel][label]=timefitting
             timesamp[mlabel][label]=timesample
+            
             
             ##store results
             crit[label]= np.where(errs>0.1) 
@@ -338,4 +350,4 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
    
         plt.show()
                               
-    return erros,timefit,timesamp
+    return erros,timefit,timesamp,errosMax,errosR

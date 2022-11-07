@@ -36,28 +36,26 @@ import os
 import six
 from modelTT import TTCellModel
 
+
 class TTCellModelChannel(TTCellModel):
    
 
    
     @staticmethod
     def cofs(ps):
-
+        print(ps)
         params=[
-               (1-0.25*ps[1])*TTCellModel.g_Na_default,
+               (1-0.25*ps[0])*TTCellModel.g_Na_default,               
+               (1-0.25*ps[1])*TTCellModel.g_CaL_default,                
+               TTCellModel.K_i_default,               
+               TTCellModel.K_o_default ,               
+               TTCellModel.atp_default, ##Atp
+               TTCellModel.g_K1_defaults *(1 -  ps[2] * 0.4), 
+               TTCellModel.g_Kr_defaults *(1 -  ps[3] * 0.7), 
+               TTCellModel.g_Ks_defaults *(1  -  ps[4] * 0.8) ,                
+               TTCellModel.g_to_defaults *(1  -  ps[5] )  ,
+               TTCellModel.g_bca_defaults *(1  +  ps[6]*(0.33) )  ,
                
-               (1-0.25*ps[2])*TTCellModel.g_CaL_default,
-                
-               TTCellModel.K_i_default - 13.3*ps[3],
-               
-               TTCellModel.K_o_default + 4.6*ps[4],
-               
-               TTCellModel.atp_default - 3 * ps[0], ##Atp
-               
-               TTCellModel.g_K1_defaults *(1 -  ps[5] * 0.4), 
-               TTCellModel.g_Kr_defaults *(1 -  ps[6] * 0.7), 
-               TTCellModel.g_Ks_defaults *(1  -  ps[6] * 0.8) ,                
-               TTCellModel.g_to_defaults (1  -  ps[6] )  ,
                
                 
          ]
@@ -68,23 +66,29 @@ class TTCellModelChannel(TTCellModel):
         return np.array(params)
     
     @staticmethod
-    def getDist():
-
-        gna=cp.Uniform(0,1.25)
-        gcal=cp.Uniform(0,1.25)    
-        ki=cp.Uniform(0,1.25) 
-        ko=cp.Uniform(0,1.25)    
-        atp=cp.Uniform(0,1.25) 
+    def getDist(low=0,high=1):
         
-        gk1=cp.Uniform(0,1.25)    
-        gkr=cp.Uniform(0,1.25) 
-        gks=cp.Uniform(0,1.25)    
-        gto=cp.Uniform(0,1.25) 
-        dist = cp.J(gna,gcal,ki,ko,atp,gk1,gkr,gks,gto)
+        gna=cp.Uniform(low,high)
+        gcal=cp.Uniform(low,high)    
+        ki=cp.Uniform(low,high) 
+        ko=cp.Uniform(low,high)    
+        atp=cp.Uniform(low,high) 
+        
+        gk1=cp.Uniform(low,high)    
+        gkr=cp.Uniform(low,high) 
+        gks=cp.Uniform(low,high)    
+        gto=cp.Uniform(low,high) 
+        gbca=cp.Uniform(low,high)
+        dist = cp.J(gna,gcal,gk1,gkr,gks,gto,gbca)
         return dist
+
+    @staticmethod
+    def run(P="",use_gpu=False, regen=True,name="out.txt"):  
+
+         return TTCellModel.run(P,use_gpu=use_gpu,regen=regen,name=name,cofsF=TTCellModelChannel.cofs)
 
 
     @staticmethod
     def getNPar():
-        return 9
+        return 7
          

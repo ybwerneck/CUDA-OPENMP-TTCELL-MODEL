@@ -37,7 +37,7 @@ class TTCellModel:
     g_Kr_defaults=0.096
     g_Ks_defaults=0.245
     g_to_defaults=2.940e-01
-
+    g_bca_defaults=5.920e-04
 
     @staticmethod
     def parseR(name="out.txt"):  
@@ -67,13 +67,42 @@ class TTCellModel:
            X.append(k)
    
         return X
+    
+      
+    @staticmethod
+    def cofs(ps):
+
+        params=[
+           (1-0.25*ps[2])*TTCellModel.g_Na_default,
+           
+           (1-0.25*ps[2])*TTCellModel.g_CaL_default,
+            
+           TTCellModel.K_i_default - 13.3*ps[2],
+           
+           TTCellModel.K_o_default + 4.6*ps[1],
+           
+           TTCellModel.atp_default - 3 * ps[0], ##Atp
+           
+           TTCellModel.g_K1_defaults, 
+           TTCellModel.g_Kr_defaults, 
+           TTCellModel.g_Ks_defaults,
+            
+           TTCellModel.g_to_defaults,
+           TTCellModel.g_bca_defaults,
+           
+            
+            ]
+     
+        return np.array(params)
+    
     @staticmethod 
-    def prepareinput(P,name="m.txt"):
-        parametersS=[TTCellModel.cofs(p) for p in P]
+    def prepareinput(P,cofs):
+        parametersS=[cofs(p) for p in P]
         with open('m.txt','wb') as f:
              np.savetxt(f,parametersS, fmt='%.8f')
+             
     @staticmethod
-    def run(P="",use_gpu=False, regen=True,name="out.txt"):  
+    def run(P="",use_gpu=False, regen=True,name="out.txt",cofsF=cofs.__func__):  
         
        count=0
        countL=0
@@ -109,7 +138,7 @@ class TTCellModel:
             if False==isinstance(P, six.string_types): ##P is file or dist
                 print("  Solving from scracth for P(",countP,")")
                 print("  Generating Input file")
-                TTCellModel.prepareinput(P)
+                TTCellModel.prepareinput(P,cofsF)
             else:
                 print("  Solving from input file ",P)
                 print("  Using given input file")
@@ -124,31 +153,7 @@ class TTCellModel:
     @staticmethod
     def setParametersOfInterest(parametersN):
         TTCellModel.parametersN=parametersN
-        
-    @staticmethod
-    def cofs(ps):
-
-        params=[
-           (1-0.25*ps[2])*TTCellModel.g_Na_default,
-           
-           (1-0.25*ps[2])*TTCellModel.g_CaL_default,
-            
-           TTCellModel.K_i_default - 13.3*ps[2],
-           
-           TTCellModel.K_o_default + 4.6*ps[1],
-           
-           TTCellModel.atp_default - 3 * ps[0], ##Atp
-           
-           TTCellModel.g_K1_defaults, 
-           TTCellModel.g_Kr_defaults, 
-           TTCellModel.g_Ks_defaults,
-            
-           TTCellModel.g_to_defaults,
-           
-            
-            ]
-     
-        return np.array(params)
+      
     
 
     @staticmethod
@@ -220,18 +225,18 @@ class TTCellModel:
             args=args+" --use_gpu=1"
      
         
-        #print("   kernel call:",args)
+        print("   kernel call:",args)
         output = subprocess.Popen(args,stdout=subprocess.PIPE,shell=True)
         string = output.stdout.read().decode("utf-8")
       
 
 
     @staticmethod
-    def getDist():
+    def getDist(low=0,high=1):
             
-        hypox=cp.Uniform(0,1.25)
-        hyper=cp.Uniform(0,1.25)    
-        acid=cp.Uniform(0,1.25) 
+        hypox=cp.Uniform(low,high)
+        hyper=cp.Uniform(low,high)    
+        acid=cp.Uniform(low,high) 
         dist = cp.J(hypox,hyper,acid)
         return dist
 
