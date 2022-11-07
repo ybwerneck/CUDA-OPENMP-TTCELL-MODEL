@@ -525,7 +525,10 @@ __device__ __host__ void initModel(float* pars, float* Y_old_, float* args, int 
 	g_bna = 2.90e-04;
 	g_CaL = 1.750e-04;
 	g_bca = 5.920e-04;
-	
+	g_Kr = 0.096; //0.134
+	g_Ks = 0.245; //0.270
+	g_K1 = 5.4050e+00;
+
 	P_NaK = 1.3620e+00;
 	K_mk = 1.0e+00;
 	K_mNa = 4.0e+01;
@@ -565,7 +568,8 @@ __device__ __host__ void initModel(float* pars, float* Y_old_, float* args, int 
 	g_K1 = args[tid + 5 * N];
 	g_Kr = args[tid + 6 * N]; 
 	g_Ks = args[tid + 7 * N];; 
-	g_to = args[tid + 8 * N];;
+	g_to = args[tid + 8 * N];
+	g_bca = args[tid + 9 * N];
 
 
 	g_pCa = 1 / (1 + pow((1.4/ atp), 2.6));
@@ -696,7 +700,7 @@ int main(int argc, char** argv)
 
 	bool use_gpu = OptionParser::foundOption("use_gpu") ? (OptionParser::parseInt("use_gpu")) == 1 ? true : false : false;
 
-	const int NPAR = 9;
+	const int NPAR = 10;
 	int np = NP;
 	string i;
 	string o;
