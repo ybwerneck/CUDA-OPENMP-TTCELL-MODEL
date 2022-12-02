@@ -41,7 +41,6 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
     print("Start Surrogate from File")
     #Load validation files
 
-    ##Reference Value for Sobol Indexes Error calculation
     
     pmin,pmax=2,4
     
@@ -206,33 +205,21 @@ def surrogatefromfile(folder,Ns,qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=
         plt.show()
                       
 
-def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True,plot=True):
+def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest","dVmax","tdV"},out=False,sobolR=None,models=None,vali=True,plot=True,sampref=0):
 
    
     #Load validation files
 
-    ##Reference Value for Sobol Indexes Error calculation
     
-    try:
-        os.mkdir(folder+"results/")
-    except:
-        print("")
-        
-        
-        
+
 
     
     
     ##Load Result File 
-    f = open(folder+'results/numeric.csv', 'a',newline='')
-    updt=os.path.exists('numeric.csv')
-    
+ 
     
     # create the csv writer
-    writer = csv.writer(f)
-    row=['QOI',	'Method', 'Degree','Val. error',' LOOERROR','Ns','Timeselected','Timemax','Timeselected G','TimemaxG','Time T']
-    writer.writerow(row)
-    
+
   
     #Load datasets
     
@@ -249,39 +236,18 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
     timesamp={}
     timefit={}
     
-    SAMPREF=utils.storeGmem(np.array(Xval).T)
+    SAMPREF=sampref
     NSAMP=np.shape(np.array(Xval))[1]
     for ml,a in models.items():
         
         timefit[ml],timesamp[ml],erros[ml]=0,0,0
     for mlabel,model in models.items():
-        print('\n',"Model: ", mlabel,'\n')      
-       ##Adpative algorithm chooses best fit in deegree range
+        if(out):
+            print('\n',"Model: ", mlabel,'\n')      
         timeL=0
-        a,b=2,2   
-        
+       
     
-        if(plot!=False):
-            fig,plotslot=plt.subplots(a,b)
-            plotsaux=[]
-            plots=[]
-            
-            try:
-                   for row in plotslot:
-                       for frame in row:
-                           plotsaux.append(frame)
-            except:
-                   try :
-                       for frame in plotslot:
-                           plotsaux.append(frame)
-                   except:
-                           plotsaux.append(plotslot)
-    
-               
-            for i in range(0,len(plotsaux)):
-                plots.append(plotsaux.pop())
-            pltidx=0
-            fig.suptitle(mlabel+" "+str(Ns))   
+     
        
         crit={}
         Ypred={}
@@ -304,12 +270,14 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
        
             stop = timeit.default_timer()
             timefitting=stop-start
-            print(label)
-            print("Time to fit",timefitting)
             timesample=measureModel(dist, predictor)
-            
-            print("Time to sample 10x resulting emulator",timesample)
-            print("\n")
+            if out:
+                print(label)
+                print("Time to fit",timefitting)
+        
+                
+                print("Time to sample 10x resulting emulator",timesample)
+                print("\n")
             ##validate model
             
             ypred=runModel(SAMPREF,predictor,NSAMP)     
@@ -335,19 +303,6 @@ def surrogatefromSet(X,Y,Xval,Yval,Ns,dist,folder="",qoi={"ADP50","ADP90","Vrest
             ##plot qoi
             if(plot==False):
                 continue
-            p=plots.pop()   
-            p.scatter(yv,ypred)
-            p.set_title(label)           
-            p.plot(yv,yv,"black",linewidth=2)
-            p.set(xlabel="Y_true",ylabel="Y_pred")
-            for ax in fig.get_axes():
-                ax.label_outer() 
-            p.get_figure().savefig(folder+"results/"+mlabel+"_validation_results.png")
-        plt.show()
-        
-        
-        
-   
-        plt.show()
+          
                               
     return erros,timefit,timesamp,errosMax,errosR

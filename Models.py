@@ -58,7 +58,7 @@ def NModel(x,y,dist):
         def model (clf,X):
             return clf.predict(X)        
         
-        clf =  MLPRegressor(random_state=1, max_iter=1500)
+        clf =  MLPRegressor(random_state=1, max_iter=3000,hidden_layer_sizes=(20))
         clf.fit(x, y)
         
         
@@ -75,7 +75,7 @@ def GPModel(x,y,dist,kernel):
         random_state=0,copy_X_train=False)
         gpr.fit(x, y)
         
-        print("RAM SIZE ",getsize(gpr))
+
         
         
         return partial(model,gpr)

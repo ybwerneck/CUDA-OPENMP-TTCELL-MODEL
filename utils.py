@@ -13,14 +13,14 @@ import ray
 from scipy.spatial import KDTree as kd
 from copy import copy as copy
 import timeit
-PROCESSN=5
+PROCESSN=10
 
 def init():
     try:
-        ray.init(ignore_reinit_error=False,num_cpus=PROCESSN,log_to_driver=False)   
+        ray.init(ignore_reinit_error=False,num_cpus=4,log_to_driver=False)   
     except:
         ray.shutdown()
-        ray.init(ignore_reinit_error=False,num_cpus=PROCESSN,log_to_driver=False)    
+        ray.init(ignore_reinit_error=False,num_cpus=4,log_to_driver=False)    
 
 
 def normalizeTwoArrays(x,y,mmin,mmax,method='normal'): #append two arrays, normalize as a single array, re-separate and return
@@ -164,7 +164,7 @@ def runModelO(samples,nsamp,model):
   
    i=0
    for i in range(nsamp):
-        R[i]= model(samples[i])
+       R[i]= model(samples[i].reshape(1,-1))
   
    return R
    
@@ -190,42 +190,56 @@ def measureModelPerfomance(dist, model):
     
     samp=dist.sample(100)
     time=0
-
-    for i in range(10):
+    r=2
+    for i in range(r):
         samp=dist.sample(10)
         start= timeit.default_timer()
         model(samp.T)
         stop = timeit.default_timer()
         t=stop-start
-        time= time + t/5
+        time= time + t/r
     
     return time
-@ray.remote
-def runModel(samples,nsamp,model):
-    
-   R={}
-  
-   R=model(samples)
-   
-   
-   return R
-   
 
-def runModelParallel(samples,model):
-      nsamp = np.shape(samples)[1]
+def storeGmem(obj):
+    return ray.put(obj)
+
+@ray.remote(num_cpus=1)
+  
+def runModel(samp,i,e,nsamp,mref):
+    
+   #model=ray.get(mref)
+   
+   
+   data=samp[i:e]
+   R=mref(data)
+    
+
+  
+   return R
+  
+ 
+
+def runModelParallel(sampref,model,nsamp):
+      
       blocksize=int(nsamp/PROCESSN)
       treads={};
-      
+      Model=ray.put(model)
       Y={}
       k=0
       for i in range(PROCESSN):
-          treads[i]=runModel.remote(samples.T[blocksize*i:blocksize*(i+1)],int(nsamp/PROCESSN),model)
+          treads[i]=runModel.remote(sampref,blocksize*i,blocksize*(i+1),int(nsamp/PROCESSN),Model)
       for x in range(PROCESSN): 
           blocSols=ray.get(treads[x])
           for s in range(blocksize):
               Y[k]=blocSols[s]
               k=k+1
       return Y
+  
+    
+  
+    
+  
 def calcula_looSingle(y, poly_exp, samples,model,I=-1):
     
  
@@ -265,7 +279,7 @@ def getRefSobol():
      1.82630159e-05, 2.43027627e-01]
     return sensitivity
 
-def readSet(folder,Ns,nPar,qoi):
+def readSet(folder,nPar,qoi):
     #Load datasets
     
     #Training Samples
@@ -294,7 +308,7 @@ def readSet(folder,Ns,nPar,qoi):
         Yval[qlabel]=readF(folder+"validation/"+qlabel+".csv")
     
     
-    wfs=readWF(folder+"validation/wfs.csv")
+   # wfs=readWF(folder+"validation/wfs.csv")
     
     return samples,Y,samplesVal,Yval
     
@@ -336,9 +350,8 @@ def drawSubset(Set,n,samples):
     for qoi,data in y.items():
         yaux[qoi]=np.array(y[qoi])[idselec]
 
-    
+ 
+     
    
     return x[idselec],yaux,xv,yv
- 
-    return 
     

@@ -43,7 +43,6 @@ class TTCellModelChannel(TTCellModel):
    
     @staticmethod
     def cofs(ps):
-        print(ps)
         params=[
                (1-0.25*ps[0])*TTCellModel.g_Na_default,               
                (1-0.25*ps[1])*TTCellModel.g_CaL_default,                
