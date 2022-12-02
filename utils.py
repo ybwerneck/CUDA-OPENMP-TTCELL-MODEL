@@ -13,14 +13,14 @@ import ray
 from scipy.spatial import KDTree as kd
 from copy import copy as copy
 import timeit
-PROCESSN=10
+PROCESSN=50
 
 def init():
     try:
-        ray.init(ignore_reinit_error=False,num_cpus=4,log_to_driver=False)   
+        ray.init(ignore_reinit_error=False,num_cpus=50,log_to_driver=False)   
     except:
         ray.shutdown()
-        ray.init(ignore_reinit_error=False,num_cpus=4,log_to_driver=False)    
+        ray.init(ignore_reinit_error=False,num_cpus=50,log_to_driver=False)    
 
 
 def normalizeTwoArrays(x,y,mmin,mmax,method='normal'): #append two arrays, normalize as a single array, re-separate and return
