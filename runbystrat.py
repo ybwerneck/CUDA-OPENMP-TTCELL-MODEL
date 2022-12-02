@@ -139,14 +139,14 @@ for modelName,mdata in models.items():
             #    " GP  4":partial(GPModel,dist=dist,kernel=( RBF(1.0, length_scale_bounds="fixed")*RationalQuadratic(length_scale=1, alpha=15))),
       
             
-       #      "Neural Network regressor":partial(NModel,dist=dist),
+            "Neural Network regressor":partial(NModel,dist=dist),
              
              #"PCE Lars D4":partial(PCEModel,P=4,regressor=lm.Lars(**kws,eps=0.75),dist=dist),      
              "PCE OLS D4":partial(PCEModel,P=4,regressor=None,dist=dist),
              "PCE OLS D2":partial(PCEModel,P=2,regressor=None,dist=dist),
              
-             "PCE OLS D5":partial(PCEModel,P=5,regressor=None,dist=dist),
-             "PCE OLS D6":partial(PCEModel,P=6,regressor=None,dist=dist),
+          #   "PCE OLS D5":partial(PCEModel,P=5,regressor=None,dist=dist),
+           #  "PCE OLS D6":partial(PCEModel,P=6,regressor=None,dist=dist),
               #ConstantKernel(1.0, constant_value_bounds="fixed") * RBF(1.0, length_scale_bounds="fixed")
               }
     Timepoints=model.getEvalPoints()
@@ -180,7 +180,7 @@ for modelName,mdata in models.items():
     s,q,sv,qv=utils.drawSubset(copy(FullSet), 100,dist.sample(100,rule="latin_hypercube",seed=100))
     SAMPREF=utils.storeGmem(sv)
     
-    ns=np.append([50*i for i in range(1,4)],[250*i for i in range(1,20)])
+    ns=np.append([50*i for i in range(1,20)],[250*i for i in range(4,20)])
 
     for qoi in qois:
         errosM[modelName][qoi]={}
